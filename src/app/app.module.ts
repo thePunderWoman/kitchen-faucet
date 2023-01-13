@@ -1,16 +1,34 @@
-import { NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
+import {Component, NgModule} from '@angular/core';
+import {BrowserModule} from '@angular/platform-browser';
+import {ServerModule} from '@angular/platform-server';
+import {KitchenSinkMdcModule} from './kitchen-sink-mdc/kitchen-sink-mdc';
+import {KitchenSinkModule} from './kitchen-sink/kitchen-sink';
 
-import { AppComponent } from './app.component';
+@Component({
+  selector: 'kitchen-sink-root',
+  template: `
+    <h1>Kitchen sink app</h1>
+    <kitchen-sink></kitchen-sink>
+    <kitchen-sink-mdc></kitchen-sink-mdc>
+  `,
+})
+export class KitchenSinkRoot {}
 
 @NgModule({
-  declarations: [
-    AppComponent
-  ],
-  imports: [
-    BrowserModule.withServerTransition({ appId: 'serverApp' })
+  declarations: [KitchenSinkRoot],
+  exports: [KitchenSinkRoot],
+  bootstrap: [KitchenSinkRoot],
+    imports: [
+    BrowserModule.withServerTransition({ appId: 'kitchen-faucet' }),
+    KitchenSinkMdcModule,
+    KitchenSinkModule,
   ],
   providers: [],
-  bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class KitchenSinkRootModule { }
+
+@NgModule({
+  imports: [KitchenSinkRootModule, ServerModule],
+  bootstrap: [KitchenSinkRoot],
+})
+export class KitchenSinkRootServerModule {}
