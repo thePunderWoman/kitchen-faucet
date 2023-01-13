@@ -1,6 +1,6 @@
 import {Component, NgModule} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
-import {ServerModule} from '@angular/platform-server';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {KitchenSinkMdcModule} from './kitchen-sink-mdc/kitchen-sink-mdc';
 import {KitchenSinkModule} from './kitchen-sink/kitchen-sink';
 
@@ -22,13 +22,8 @@ export class KitchenSinkRoot {}
     BrowserModule.withServerTransition({ appId: 'kitchen-faucet' }),
     KitchenSinkMdcModule,
     KitchenSinkModule,
+    BrowserAnimationsModule,
   ],
   providers: [],
 })
 export class KitchenSinkRootModule { }
-
-@NgModule({
-  imports: [KitchenSinkRootModule, ServerModule],
-  bootstrap: [KitchenSinkRoot],
-})
-export class KitchenSinkRootServerModule {}

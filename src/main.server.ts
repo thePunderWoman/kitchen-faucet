@@ -1,2 +1,2 @@
 
-export { KitchenSinkRootServerModule } from './app/app.module';
+export { KitchenSinkRootServerModule } from './app/app.server-module';
