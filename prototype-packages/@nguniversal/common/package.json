@@ -1,0 +1,95 @@
+{
+  "name": "@nguniversal/common",
+  "version": "15.1.0",
+  "description": "Angular Universal common utilities",
+  "license": "MIT",
+  "keywords": [
+    "ssr",
+    "universal"
+  ],
+  "./tools": {
+    "types": "./tools.d.ts",
+    "default": "./tools/bundles/index.js"
+  },
+  "engines": {
+    "node": "^14.20.0 || ^16.13.0 || >=18.10.0"
+  },
+  "dependencies": {
+    "critters": "0.0.16",
+    "jsdom": "21.0.0",
+    "tslib": "^2.3.0"
+  },
+  "peerDependencies": {
+    "@angular/common": "file:prototype-packages/v3/@angular/common",
+    "@angular/core": "file:prototype-packages/v3/@angular/core"
+  },
+  "schematics": "./schematics/collection.json",
+  "ng-update": {
+    "packageGroup": [
+      "@nguniversal/builders",
+      "@nguniversal/common",
+      "@nguniversal/express-engine"
+    ],
+    "packageGroupName": "@nguniversal/common"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/angular/universal"
+  },
+  "bugs": {
+    "url": "https://github.com/angular/universal/issues"
+  },
+  "homepage": "https://github.com/angular/universal",
+  "fesm2020": "./fesm2020/common.mjs",
+  "fesm2015": "./fesm2015/common.mjs",
+  "esm2020": "./esm2020/common.mjs",
+  "typings": "./index.d.ts",
+  "module": "./fesm2015/common.mjs",
+  "es2020": "./fesm2020/common.mjs",
+  "type": "module",
+  "exports": {
+    "./package.json": {
+      "default": "./package.json"
+    },
+    ".": {
+      "types": "./index.d.ts",
+      "esm2020": "./esm2020/common.mjs",
+      "es2020": "./fesm2020/common.mjs",
+      "es2015": "./fesm2015/common.mjs",
+      "node": "./fesm2015/common.mjs",
+      "default": "./fesm2020/common.mjs"
+    },
+    "./clover": {
+      "types": "./clover/index.d.ts",
+      "esm2020": "./esm2020/clover/clover.mjs",
+      "es2020": "./fesm2020/clover.mjs",
+      "es2015": "./fesm2015/clover.mjs",
+      "node": "./fesm2015/clover.mjs",
+      "default": "./fesm2020/clover.mjs"
+    },
+    "./clover/server": {
+      "types": "./clover/server/index.d.ts",
+      "esm2020": "./esm2020/clover/server/server.mjs",
+      "es2020": "./fesm2020/clover/server.mjs",
+      "es2015": "./fesm2015/clover/server.mjs",
+      "node": "./fesm2015/clover/server.mjs",
+      "default": "./fesm2020/clover/server.mjs"
+    },
+    "./engine": {
+      "types": "./engine/index.d.ts",
+      "esm2020": "./esm2020/engine/engine.mjs",
+      "es2020": "./fesm2020/engine.mjs",
+      "es2015": "./fesm2015/engine.mjs",
+      "node": "./fesm2015/engine.mjs",
+      "default": "./fesm2020/engine.mjs"
+    },
+    "./tools": {
+      "types": "./tools/index.d.ts",
+      "esm2020": "./esm2020/tools/tools.mjs",
+      "es2020": "./fesm2020/tools.mjs",
+      "es2015": "./fesm2015/tools.mjs",
+      "node": "./fesm2015/tools.mjs",
+      "default": "./fesm2020/tools.mjs"
+    }
+  }
+}

@@ -1,8 +1,22 @@
-import {Component, NgModule} from '@angular/core';
+import {Component, NgModule, ɵprovideHydrationSupport as provideHydrationSupport} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {KitchenSinkMdcModule} from './kitchen-sink-mdc/kitchen-sink-mdc';
 import {KitchenSinkModule} from './kitchen-sink/kitchen-sink';
+
+const isClient = typeof window !== 'undefined';
+if (isClient) {
+  (window as any).verifyAllNodesClaimedForHydration = function verifyAllNodesClaimedForHydration(el: any) {
+    if (!el.__claimed) {
+      throw new Error('Hydration error: the node is *not* hydrated: ' + el.outerHTML);
+    }
+    let current = el.firstChild;
+    while (current) {
+      verifyAllNodesClaimedForHydration(current);
+      current = current.nextSibling;
+    }
+  }
+}
 
 @Component({
   selector: 'kitchen-sink-root',
@@ -24,6 +38,6 @@ export class KitchenSinkRoot {}
     KitchenSinkModule,
     BrowserAnimationsModule,
   ],
-  providers: [],
+  providers: [isClient ? provideHydrationSupport() : []],
 })
 export class KitchenSinkRootModule { }

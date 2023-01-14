@@ -1,9 +1,9 @@
-<h2>Autocomplete</h2>
-<mat-autocomplete>
+<!-- <h2>Autocomplete</h2> -->
+<!-- <mat-autocomplete>
   <mat-option>Grace Hopper</mat-option>
   <mat-option>Anita Borg</mat-option>
   <mat-option>Ada Lovelace</mat-option>
-</mat-autocomplete>
+</mat-autocomplete> -->
 
 <h2>Button</h2>
 
@@ -58,20 +58,21 @@
 </mat-chip-set>
 
 <mat-chip-listbox>
-  <mat-chip-option>Extra Small</mat-chip-option>
-  <mat-chip-option>Small</mat-chip-option>
+  <mat-chip-option aria-description="Extra Small chip option">Extra Small</mat-chip-option>
+  <!-- <mat-chip-option>Small</mat-chip-option>
   <mat-chip-option>Medium</mat-chip-option>
-  <mat-chip-option>Large</mat-chip-option>
+  <mat-chip-option>Large</mat-chip-option> -->
 </mat-chip-listbox>
 
-<h2>MDC menu</h2>
+<!-- <h2>MDC menu</h2>
 <button mat-button [matMenuTriggerFor]="menu">Open</button>
 <mat-menu #menu="matMenu">
   <button mat-menu-item>Mercy</button>
   <button mat-menu-item>Lucio</button>
   <button mat-menu-item disabled>Sombra</button>
-</mat-menu>
+</mat-menu> -->
 
+<!-- 
 <h2>MDC Radio buttons</h2>
 
 <h3>MDC Radio group</h3>
@@ -80,14 +81,13 @@
   <mat-radio-button>Squirtle</mat-radio-button>
   <mat-radio-button>Bulbasaur</mat-radio-button>
 </mat-radio-group>
-
 <h3>MDC Standalone radios</h3>
 <mat-radio-button name="onions">White</mat-radio-button>
 <mat-radio-button name="onions">Yellow</mat-radio-button>
 <mat-radio-button name="onions">Green</mat-radio-button>
-<mat-radio-button name="onions" disabled>Red</mat-radio-button>
+<mat-radio-button name="onions" disabled>Red</mat-radio-button> -->
 
-<h2>MDC Select</h2>
+<!-- <h2>MDC Select</h2>
 <mat-form-field>
   <mat-select value="ceramic">
     <mat-option value="glass">Glass</mat-option>
@@ -121,6 +121,8 @@
   Note that we set the `selectedIndex` here to hit the code path
   where we might need to do some measurements.
 -->
+<!--
+
 <mat-tab-group [selectedIndex]="1">
   <mat-tab label="Overview">
     The overview
@@ -256,4 +258,4 @@
   <mat-list-option value="apples">Apples</mat-list-option>
   <mat-list-option value="bananas">Bananas</mat-list-option>
   <mat-list-option value="oranges">Oranges</mat-list-option>
-</mat-selection-list>
+</mat-selection-list> -->

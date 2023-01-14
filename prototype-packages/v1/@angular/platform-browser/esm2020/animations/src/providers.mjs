@@ -1,0 +1,70 @@
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+import { AnimationBuilder } from '@angular/animations';
+import { AnimationDriver, ɵAnimationEngine as AnimationEngine, ɵAnimationStyleNormalizer as AnimationStyleNormalizer, ɵNoopAnimationDriver as NoopAnimationDriver, ɵWebAnimationsDriver as WebAnimationsDriver, ɵWebAnimationsStyleNormalizer as WebAnimationsStyleNormalizer } from '@angular/animations/browser';
+import { DOCUMENT } from '@angular/common';
+import { ANIMATION_MODULE_TYPE, ApplicationRef, DELEGATE_RENDERER_FACTORY_FN, inject, Inject, Injectable, NgZone, RendererFactory2 } from '@angular/core';
+import { ɵDomRendererFactory2 as DomRendererFactory2 } from '@angular/platform-browser';
+import { BrowserAnimationBuilder } from './animation_builder';
+import { AnimationRendererFactory } from './animation_renderer';
+import * as i0 from "@angular/core";
+import * as i1 from "@angular/animations/browser";
+export class InjectableAnimationEngine extends AnimationEngine {
+    // The `ApplicationRef` is injected here explicitly to force the dependency ordering.
+    // Since the `ApplicationRef` should be created earlier before the `AnimationEngine`, they
+    // both have `ngOnDestroy` hooks and `flush()` must be called after all views are destroyed.
+    constructor(doc, driver, normalizer, appRef) {
+        super(doc.body, driver, normalizer);
+    }
+    ngOnDestroy() {
+        this.flush();
+    }
+}
+InjectableAnimationEngine.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.1+sha-5179b64", ngImport: i0, type: InjectableAnimationEngine, deps: [{ token: DOCUMENT }, { token: i1.AnimationDriver }, { token: i1.ɵAnimationStyleNormalizer }, { token: i0.ApplicationRef }], target: i0.ɵɵFactoryTarget.Injectable });
+InjectableAnimationEngine.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "15.1.0-next.1+sha-5179b64", ngImport: i0, type: InjectableAnimationEngine });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.1+sha-5179b64", ngImport: i0, type: InjectableAnimationEngine, decorators: [{
+            type: Injectable
+        }], ctorParameters: function () { return [{ type: undefined, decorators: [{
+                    type: Inject,
+                    args: [DOCUMENT]
+                }] }, { type: i1.AnimationDriver }, { type: i1.ɵAnimationStyleNormalizer }, { type: i0.ApplicationRef }]; } });
+export function instantiateDefaultStyleNormalizer() {
+    return new WebAnimationsStyleNormalizer();
+}
+export function instantiateAnimationRendererFactory(renderer) {
+    const engine = inject(AnimationEngine);
+    const zone = inject(NgZone);
+    return new AnimationRendererFactory(renderer, engine, zone);
+}
+const SHARED_ANIMATION_PROVIDERS = [
+    { provide: AnimationBuilder, useClass: BrowserAnimationBuilder },
+    { provide: AnimationStyleNormalizer, useFactory: instantiateDefaultStyleNormalizer },
+    { provide: AnimationEngine, useClass: InjectableAnimationEngine }, {
+        provide: RendererFactory2,
+        useFactory: instantiateAnimationRendererFactory,
+        deps: [DomRendererFactory2]
+    },
+    { provide: DELEGATE_RENDERER_FACTORY_FN, useValue: instantiateAnimationRendererFactory }
+];
+/**
+ * Separate providers from the actual module so that we can do a local modification in Google3 to
+ * include them in the BrowserModule.
+ */
+export const BROWSER_ANIMATIONS_PROVIDERS = [
+    { provide: AnimationDriver, useFactory: () => new WebAnimationsDriver() },
+    { provide: ANIMATION_MODULE_TYPE, useValue: 'BrowserAnimations' }, ...SHARED_ANIMATION_PROVIDERS
+];
+/**
+ * Separate providers from the actual module so that we can do a local modification in Google3 to
+ * include them in the BrowserTestingModule.
+ */
+export const BROWSER_NOOP_ANIMATIONS_PROVIDERS = [
+    { provide: AnimationDriver, useClass: NoopAnimationDriver },
+    { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' }, ...SHARED_ANIMATION_PROVIDERS
+];
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicHJvdmlkZXJzLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiLi4vLi4vLi4vLi4vLi4vLi4vLi4vcGFja2FnZXMvcGxhdGZvcm0tYnJvd3Nlci9hbmltYXRpb25zL3NyYy9wcm92aWRlcnMudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7Ozs7OztHQU1HO0FBRUgsT0FBTyxFQUFDLGdCQUFnQixFQUFDLE1BQU0scUJBQXFCLENBQUM7QUFDckQsT0FBTyxFQUFDLGVBQWUsRUFBRSxnQkFBZ0IsSUFBSSxlQUFlLEVBQUUseUJBQXlCLElBQUksd0JBQXdCLEVBQUUsb0JBQW9CLElBQUksbUJBQW1CLEVBQUUsb0JBQW9CLElBQUksbUJBQW1CLEVBQUUsNkJBQTZCLElBQUksNEJBQTRCLEVBQUMsTUFBTSw2QkFBNkIsQ0FBQztBQUNqVCxPQUFPLEVBQUMsUUFBUSxFQUFDLE1BQU0saUJBQWlCLENBQUM7QUFDekMsT0FBTyxFQUFDLHFCQUFxQixFQUFFLGNBQWMsRUFBRSw0QkFBNEIsRUFBRSxNQUFNLEVBQUUsTUFBTSxFQUFFLFVBQVUsRUFBRSxNQUFNLEVBQXVCLGdCQUFnQixFQUFDLE1BQU0sZUFBZSxDQUFDO0FBQzdLLE9BQU8sRUFBQyxvQkFBb0IsSUFBSSxtQkFBbUIsRUFBQyxNQUFNLDJCQUEyQixDQUFDO0FBRXRGLE9BQU8sRUFBQyx1QkFBdUIsRUFBQyxNQUFNLHFCQUFxQixDQUFDO0FBQzVELE9BQU8sRUFBQyx3QkFBd0IsRUFBQyxNQUFNLHNCQUFzQixDQUFDOzs7QUFHOUQsTUFBTSxPQUFPLHlCQUEwQixTQUFRLGVBQWU7SUFDNUQscUZBQXFGO0lBQ3JGLDBGQUEwRjtJQUMxRiw0RkFBNEY7SUFDNUYsWUFDc0IsR0FBUSxFQUFFLE1BQXVCLEVBQUUsVUFBb0MsRUFDekYsTUFBc0I7UUFDeEIsS0FBSyxDQUFDLEdBQUcsQ0FBQyxJQUFJLEVBQUUsTUFBTSxFQUFFLFVBQVUsQ0FBQyxDQUFDO0lBQ3RDLENBQUM7SUFFRCxXQUFXO1FBQ1QsSUFBSSxDQUFDLEtBQUssRUFBRSxDQUFDO0lBQ2YsQ0FBQzs7aUlBWlUseUJBQXlCLGtCQUt4QixRQUFRO3FJQUxULHlCQUF5QjtzR0FBekIseUJBQXlCO2tCQURyQyxVQUFVOzswQkFNSixNQUFNOzJCQUFDLFFBQVE7O0FBVXRCLE1BQU0sVUFBVSxpQ0FBaUM7SUFDL0MsT0FBTyxJQUFJLDRCQUE0QixFQUFFLENBQUM7QUFDNUMsQ0FBQztBQUVELE1BQU0sVUFBVSxtQ0FBbUMsQ0FBQyxRQUE2QjtJQUMvRSxNQUFNLE1BQU0sR0FBRyxNQUFNLENBQUMsZUFBZSxDQUFDLENBQUM7SUFDdkMsTUFBTSxJQUFJLEdBQUcsTUFBTSxDQUFDLE1BQU0sQ0FBQyxDQUFDO0lBQzVCLE9BQU8sSUFBSSx3QkFBd0IsQ0FBQyxRQUFRLEVBQUUsTUFBTSxFQUFFLElBQUksQ0FBQyxDQUFDO0FBQzlELENBQUM7QUFFRCxNQUFNLDBCQUEwQixHQUFlO0lBQzdDLEVBQUMsT0FBTyxFQUFFLGdCQUFnQixFQUFFLFFBQVEsRUFBRSx1QkFBdUIsRUFBQztJQUM5RCxFQUFDLE9BQU8sRUFBRSx3QkFBd0IsRUFBRSxVQUFVLEVBQUUsaUNBQWlDLEVBQUM7SUFDbEYsRUFBQyxPQUFPLEVBQUUsZUFBZSxFQUFFLFFBQVEsRUFBRSx5QkFBeUIsRUFBQyxFQUFFO1FBQy9ELE9BQU8sRUFBRSxnQkFBZ0I7UUFDekIsVUFBVSxFQUFFLG1DQUFtQztRQUMvQyxJQUFJLEVBQUUsQ0FBQyxtQkFBbUIsQ0FBQztLQUM1QjtJQUNELEVBQUMsT0FBTyxFQUFFLDRCQUE0QixFQUFFLFFBQVEsRUFBRSxtQ0FBbUMsRUFBQztDQUN2RixDQUFDO0FBRUY7OztHQUdHO0FBQ0gsTUFBTSxDQUFDLE1BQU0sNEJBQTRCLEdBQWU7SUFDdEQsRUFBQyxPQUFPLEVBQUUsZUFBZSxFQUFFLFVBQVUsRUFBRSxHQUFHLEVBQUUsQ0FBQyxJQUFJLG1CQUFtQixFQUFFLEVBQUM7SUFDdkUsRUFBQyxPQUFPLEVBQUUscUJBQXFCLEVBQUUsUUFBUSxFQUFFLG1CQUFtQixFQUFDLEVBQUUsR0FBRywwQkFBMEI7Q0FDL0YsQ0FBQztBQUVGOzs7R0FHRztBQUNILE1BQU0sQ0FBQyxNQUFNLGlDQUFpQyxHQUFlO0lBQzNELEVBQUMsT0FBTyxFQUFFLGVBQWUsRUFBRSxRQUFRLEVBQUUsbUJBQW1CLEVBQUM7SUFDekQsRUFBQyxPQUFPLEVBQUUscUJBQXFCLEVBQUUsUUFBUSxFQUFFLGdCQUFnQixFQUFDLEVBQUUsR0FBRywwQkFBMEI7Q0FDNUYsQ0FBQyIsInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogQGxpY2Vuc2VcbiAqIENvcHlyaWdodCBHb29nbGUgTExDIEFsbCBSaWdodHMgUmVzZXJ2ZWQuXG4gKlxuICogVXNlIG9mIHRoaXMgc291cmNlIGNvZGUgaXMgZ292ZXJuZWQgYnkgYW4gTUlULXN0eWxlIGxpY2Vuc2UgdGhhdCBjYW4gYmVcbiAqIGZvdW5kIGluIHRoZSBMSUNFTlNFIGZpbGUgYXQgaHR0cHM6Ly9hbmd1bGFyLmlvL2xpY2Vuc2VcbiAqL1xuXG5pbXBvcnQge0FuaW1hdGlvbkJ1aWxkZXJ9IGZyb20gJ0Bhbmd1bGFyL2FuaW1hdGlvbnMnO1xuaW1wb3J0IHtBbmltYXRpb25Ecml2ZXIsIMm1QW5pbWF0aW9uRW5naW5lIGFzIEFuaW1hdGlvbkVuZ2luZSwgybVBbmltYXRpb25TdHlsZU5vcm1hbGl6ZXIgYXMgQW5pbWF0aW9uU3R5bGVOb3JtYWxpemVyLCDJtU5vb3BBbmltYXRpb25Ecml2ZXIgYXMgTm9vcEFuaW1hdGlvbkRyaXZlciwgybVXZWJBbmltYXRpb25zRHJpdmVyIGFzIFdlYkFuaW1hdGlvbnNEcml2ZXIsIMm1V2ViQW5pbWF0aW9uc1N0eWxlTm9ybWFsaXplciBhcyBXZWJBbmltYXRpb25zU3R5bGVOb3JtYWxpemVyfSBmcm9tICdAYW5ndWxhci9hbmltYXRpb25zL2Jyb3dzZXInO1xuaW1wb3J0IHtET0NVTUVOVH0gZnJvbSAnQGFuZ3VsYXIvY29tbW9uJztcbmltcG9ydCB7QU5JTUFUSU9OX01PRFVMRV9UWVBFLCBBcHBsaWNhdGlvblJlZiwgREVMRUdBVEVfUkVOREVSRVJfRkFDVE9SWV9GTiwgaW5qZWN0LCBJbmplY3QsIEluamVjdGFibGUsIE5nWm9uZSwgT25EZXN0cm95LCBQcm92aWRlciwgUmVuZGVyZXJGYWN0b3J5Mn0gZnJvbSAnQGFuZ3VsYXIvY29yZSc7XG5pbXBvcnQge8m1RG9tUmVuZGVyZXJGYWN0b3J5MiBhcyBEb21SZW5kZXJlckZhY3RvcnkyfSBmcm9tICdAYW5ndWxhci9wbGF0Zm9ybS1icm93c2VyJztcblxuaW1wb3J0IHtCcm93c2VyQW5pbWF0aW9uQnVpbGRlcn0gZnJvbSAnLi9hbmltYXRpb25fYnVpbGRlcic7XG5pbXBvcnQge0FuaW1hdGlvblJlbmRlcmVyRmFjdG9yeX0gZnJvbSAnLi9hbmltYXRpb25fcmVuZGVyZXInO1xuXG5ASW5qZWN0YWJsZSgpXG5leHBvcnQgY2xhc3MgSW5qZWN0YWJsZUFuaW1hdGlvbkVuZ2luZSBleHRlbmRzIEFuaW1hdGlvbkVuZ2luZSBpbXBsZW1lbnRzIE9uRGVzdHJveSB7XG4gIC8vIFRoZSBgQXBwbGljYXRpb25SZWZgIGlzIGluamVjdGVkIGhlcmUgZXhwbGljaXRseSB0byBmb3JjZSB0aGUgZGVwZW5kZW5jeSBvcmRlcmluZy5cbiAgLy8gU2luY2UgdGhlIGBBcHBsaWNhdGlvblJlZmAgc2hvdWxkIGJlIGNyZWF0ZWQgZWFybGllciBiZWZvcmUgdGhlIGBBbmltYXRpb25FbmdpbmVgLCB0aGV5XG4gIC8vIGJvdGggaGF2ZSBgbmdPbkRlc3Ryb3lgIGhvb2tzIGFuZCBgZmx1c2goKWAgbXVzdCBiZSBjYWxsZWQgYWZ0ZXIgYWxsIHZpZXdzIGFyZSBkZXN0cm95ZWQuXG4gIGNvbnN0cnVjdG9yKFxuICAgICAgQEluamVjdChET0NVTUVOVCkgZG9jOiBhbnksIGRyaXZlcjogQW5pbWF0aW9uRHJpdmVyLCBub3JtYWxpemVyOiBBbmltYXRpb25TdHlsZU5vcm1hbGl6ZXIsXG4gICAgICBhcHBSZWY6IEFwcGxpY2F0aW9uUmVmKSB7XG4gICAgc3VwZXIoZG9jLmJvZHksIGRyaXZlciwgbm9ybWFsaXplcik7XG4gIH1cblxuICBuZ09uRGVzdHJveSgpOiB2b2lkIHtcbiAgICB0aGlzLmZsdXNoKCk7XG4gIH1cbn1cblxuZXhwb3J0IGZ1bmN0aW9uIGluc3RhbnRpYXRlRGVmYXVsdFN0eWxlTm9ybWFsaXplcigpIHtcbiAgcmV0dXJuIG5ldyBXZWJBbmltYXRpb25zU3R5bGVOb3JtYWxpemVyKCk7XG59XG5cbmV4cG9ydCBmdW5jdGlvbiBpbnN0YW50aWF0ZUFuaW1hdGlvblJlbmRlcmVyRmFjdG9yeShyZW5kZXJlcjogRG9tUmVuZGVyZXJGYWN0b3J5Mikge1xuICBjb25zdCBlbmdpbmUgPSBpbmplY3QoQW5pbWF0aW9uRW5naW5lKTtcbiAgY29uc3Qgem9uZSA9IGluamVjdChOZ1pvbmUpO1xuICByZXR1cm4gbmV3IEFuaW1hdGlvblJlbmRlcmVyRmFjdG9yeShyZW5kZXJlciwgZW5naW5lLCB6b25lKTtcbn1cblxuY29uc3QgU0hBUkVEX0FOSU1BVElPTl9QUk9WSURFUlM6IFByb3ZpZGVyW10gPSBbXG4gIHtwcm92aWRlOiBBbmltYXRpb25CdWlsZGVyLCB1c2VDbGFzczogQnJvd3NlckFuaW1hdGlvbkJ1aWxkZXJ9LFxuICB7cHJvdmlkZTogQW5pbWF0aW9uU3R5bGVOb3JtYWxpemVyLCB1c2VGYWN0b3J5OiBpbnN0YW50aWF0ZURlZmF1bHRTdHlsZU5vcm1hbGl6ZXJ9LFxuICB7cHJvdmlkZTogQW5pbWF0aW9uRW5naW5lLCB1c2VDbGFzczogSW5qZWN0YWJsZUFuaW1hdGlvbkVuZ2luZX0sIHtcbiAgICBwcm92aWRlOiBSZW5kZXJlckZhY3RvcnkyLFxuICAgIHVzZUZhY3Rvcnk6IGluc3RhbnRpYXRlQW5pbWF0aW9uUmVuZGVyZXJGYWN0b3J5LFxuICAgIGRlcHM6IFtEb21SZW5kZXJlckZhY3RvcnkyXVxuICB9LFxuICB7cHJvdmlkZTogREVMRUdBVEVfUkVOREVSRVJfRkFDVE9SWV9GTiwgdXNlVmFsdWU6IGluc3RhbnRpYXRlQW5pbWF0aW9uUmVuZGVyZXJGYWN0b3J5fVxuXTtcblxuLyoqXG4gKiBTZXBhcmF0ZSBwcm92aWRlcnMgZnJvbSB0aGUgYWN0dWFsIG1vZHVsZSBzbyB0aGF0IHdlIGNhbiBkbyBhIGxvY2FsIG1vZGlmaWNhdGlvbiBpbiBHb29nbGUzIHRvXG4gKiBpbmNsdWRlIHRoZW0gaW4gdGhlIEJyb3dzZXJNb2R1bGUuXG4gKi9cbmV4cG9ydCBjb25zdCBCUk9XU0VSX0FOSU1BVElPTlNfUFJPVklERVJTOiBQcm92aWRlcltdID0gW1xuICB7cHJvdmlkZTogQW5pbWF0aW9uRHJpdmVyLCB1c2VGYWN0b3J5OiAoKSA9PiBuZXcgV2ViQW5pbWF0aW9uc0RyaXZlcigpfSxcbiAge3Byb3ZpZGU6IEFOSU1BVElPTl9NT0RVTEVfVFlQRSwgdXNlVmFsdWU6ICdCcm93c2VyQW5pbWF0aW9ucyd9LCAuLi5TSEFSRURfQU5JTUFUSU9OX1BST1ZJREVSU1xuXTtcblxuLyoqXG4gKiBTZXBhcmF0ZSBwcm92aWRlcnMgZnJvbSB0aGUgYWN0dWFsIG1vZHVsZSBzbyB0aGF0IHdlIGNhbiBkbyBhIGxvY2FsIG1vZGlmaWNhdGlvbiBpbiBHb29nbGUzIHRvXG4gKiBpbmNsdWRlIHRoZW0gaW4gdGhlIEJyb3dzZXJUZXN0aW5nTW9kdWxlLlxuICovXG5leHBvcnQgY29uc3QgQlJPV1NFUl9OT09QX0FOSU1BVElPTlNfUFJPVklERVJTOiBQcm92aWRlcltdID0gW1xuICB7cHJvdmlkZTogQW5pbWF0aW9uRHJpdmVyLCB1c2VDbGFzczogTm9vcEFuaW1hdGlvbkRyaXZlcn0sXG4gIHtwcm92aWRlOiBBTklNQVRJT05fTU9EVUxFX1RZUEUsIHVzZVZhbHVlOiAnTm9vcEFuaW1hdGlvbnMnfSwgLi4uU0hBUkVEX0FOSU1BVElPTl9QUk9WSURFUlNcbl07XG4iXX0=
