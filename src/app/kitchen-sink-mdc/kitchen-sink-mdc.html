@@ -1,9 +1,11 @@
-<!-- <h2>Autocomplete</h2> -->
-<!-- <mat-autocomplete>
+<!-- Hydration Problems -->
+<!-- Expecting an element node with mat-option tag name in the elementStart instruction [Expected=> mat-option == mat-autocomplete <=Actual] -->
+<h2>Autocomplete</h2>
+<mat-autocomplete>
   <mat-option>Grace Hopper</mat-option>
   <mat-option>Anita Borg</mat-option>
   <mat-option>Ada Lovelace</mat-option>
-</mat-autocomplete> -->
+</mat-autocomplete>
 
 <h2>Button</h2>
 
@@ -49,21 +51,32 @@
 <mat-checkbox indeterminate></mat-checkbox>
 <mat-checkbox>with a label</mat-checkbox>
 
-<h2>MDC chips</h2>
+<h2>MDC Tooltip</h2>
 
-<mat-chip-set>
+<button matTooltip="Action!">Go</button>
+
+<!-- Hydration Problems -->
+<!-- <h2>MDC chips</h2> -->
+
+<!-- Hydration Problems -->
+<!-- Direct DOM manipulation causing flicker -->
+<!-- <mat-chip-set>
   <mat-basic-chip>Basic Chip 1</mat-basic-chip>
   <mat-basic-chip>Basic Chip 2</mat-basic-chip>
   <mat-basic-chip>Basic Chip 3</mat-basic-chip>
-</mat-chip-set>
+</mat-chip-set> -->
 
-<mat-chip-listbox>
+<!-- Hydration Problems -->
+<!-- Cannot read properties of null (reading 'nodeType') -->
+<!-- <mat-chip-listbox>
   <mat-chip-option aria-description="Extra Small chip option">Extra Small</mat-chip-option>
-  <!-- <mat-chip-option>Small</mat-chip-option>
+  <mat-chip-option>Small</mat-chip-option>
   <mat-chip-option>Medium</mat-chip-option>
-  <mat-chip-option>Large</mat-chip-option> -->
-</mat-chip-listbox>
+  <mat-chip-option>Large</mat-chip-option>
+</mat-chip-listbox> -->
 
+<!-- Hydration Problems -->
+<!-- Cannot read properties of undefined (reading 'nodeType') -->
 <!-- <h2>MDC menu</h2>
 <button mat-button [matMenuTriggerFor]="menu">Open</button>
 <mat-menu #menu="matMenu">
@@ -72,7 +85,6 @@
   <button mat-menu-item disabled>Sombra</button>
 </mat-menu> -->
 
-<!-- 
 <h2>MDC Radio buttons</h2>
 
 <h3>MDC Radio group</h3>
@@ -85,8 +97,10 @@
 <mat-radio-button name="onions">White</mat-radio-button>
 <mat-radio-button name="onions">Yellow</mat-radio-button>
 <mat-radio-button name="onions">Green</mat-radio-button>
-<mat-radio-button name="onions" disabled>Red</mat-radio-button> -->
+<mat-radio-button name="onions" disabled>Red</mat-radio-button>
 
+<!-- Hydration Problems -->
+<!-- Expecting an element node with mat-option tag name in the elementStart instruction [Expected=> mat-option == mat-select <=Actual] -->
 <!-- <h2>MDC Select</h2>
 <mat-form-field>
   <mat-select value="ceramic">
@@ -94,8 +108,9 @@
     <mat-option value="ceramic">Ceramic</mat-option>
     <mat-option value="steel">Steel</mat-option>
   </mat-select>
-</mat-form-field>
+</mat-form-field> -->
 
+<!-- Works -->
 <h2>MDC slide-toggle</h2>
 
 <mat-slide-toggle></mat-slide-toggle>
@@ -103,7 +118,9 @@
 <mat-slide-toggle checked disabled></mat-slide-toggle>
 <mat-slide-toggle>with a label</mat-slide-toggle>
 
-<h2>MDC Slider</h2>
+<!-- Tried to claim a node which was already claimed -->
+<!-- Hydration Problems -->
+<!-- <h2>MDC Slider</h2>
 <mat-slider>
   <input matSliderThumb value="60">
 </mat-slider>
@@ -113,16 +130,16 @@
 <mat-slider min="200" max="500" step="100" discrete showTickMarks>
   <input value="300" matSliderStartThumb>
   <input value="400" matSliderEndThumb>
-</mat-slider>
+</mat-slider> -->
 
-<h2>MDC Tabs</h2>
 
+<!-- Hydration Problems -->
+<!-- Expected different element node: [Expected=> mat-tab == mat-tab-header <=Actual] -->
 <!--
   Note that we set the `selectedIndex` here to hit the code path
   where we might need to do some measurements.
 -->
-<!--
-
+<!-- <h2>MDC Tabs</h2>
 <mat-tab-group [selectedIndex]="1">
   <mat-tab label="Overview">
     The overview
@@ -139,16 +156,20 @@
  <a mat-tab-link href="https://google.com">Google</a>
  <a mat-tab-link href="https://google.com" [active]="true">Also Google</a>
 </nav>
-<mat-tab-nav-panel #tabPanel></mat-tab-nav-panel>
+<mat-tab-nav-panel #tabPanel></mat-tab-nav-panel> -->
 
-<h2>MDC Paginator</h2>
+<!-- Hydration Problems -->
+<!-- Cannot read properties of undefined (reading 'nodeType') -->
+<!-- <h2>MDC Paginator</h2>
 
 <mat-paginator [length]="100"
                [pageSizeOptions]="[5, 10, 25, 100]"
                aria-label="Select page">
-</mat-paginator>
+</mat-paginator> -->
 
-<h2>MDC Table</h2>
+<!-- Hydration Problems -->
+<!-- Expecting a comment node as a view container anchor [Expected=> 8 == 1 <=Actual] -->
+<!-- <h2>MDC Table</h2>
 <table mat-table [dataSource]="[1, 2, 3]">
   <ng-container matColumnDef="first-column">
     <th mat-header-cell *matHeaderCellDef> First </th>
@@ -161,7 +182,7 @@
 
   <tr mat-header-row *matHeaderRowDef="['first-column', 'second-column']"></tr>
   <tr mat-row *matRowDef="let row; columns: ['first-column', 'second-column'];"></tr>
-</table>
+</table> -->
 
 
 
@@ -258,4 +279,4 @@
   <mat-list-option value="apples">Apples</mat-list-option>
   <mat-list-option value="bananas">Bananas</mat-list-option>
   <mat-list-option value="oranges">Oranges</mat-list-option>
-</mat-selection-list> -->
+</mat-selection-list>

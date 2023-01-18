@@ -1,11 +1,10 @@
 /**
- * @license Angular v15.1.0-next.2+sha-aab62c7-with-local-changes
+ * @license Angular v15.1.0-next.2+sha-1939ca0
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
 
 
-import { InjectionToken as InjectionToken_2 } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Subject } from 'rxjs';
 import { Subscribable } from 'rxjs';
@@ -4751,6 +4750,7 @@ declare interface NghContainer {
     views: NghView[];
     numRootNodes?: number;
     firstChild?: HTMLElement;
+    dehydratedViews?: NghView[];
 }
 
 declare interface NghDom {
@@ -9911,11 +9911,11 @@ export declare const enum ɵProfilerEvent {
  * @developerPreview
  */
 export declare function ɵprovideHydrationSupport(): ({
-    provide: InjectionToken_2<() => void>;
+    provide: InjectionToken<() => void>;
     useValue: () => void;
     multi: boolean;
 } | {
-    provide: InjectionToken_2<boolean>;
+    provide: InjectionToken<boolean>;
     useValue: boolean;
     multi?: undefined;
 })[];

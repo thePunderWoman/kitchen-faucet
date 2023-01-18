@@ -20,6 +20,7 @@ import {MatSnackBarModule, MatSnackBar} from '@angular/material/snack-bar';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatSelectModule} from '@angular/material/select';
 import {MatPaginatorModule} from '@angular/material/paginator';
+import {MatTooltipModule} from '@angular/material/tooltip';
 
 @Component({
   template: `<button>Do the thing</button>`,
@@ -32,7 +33,7 @@ export class TestEntryComponent {}
 })
 export class KitchenSinkMdc {
   constructor(dialog: MatDialog) {
-    dialog.open(TestEntryComponent);
+    // dialog.open(TestEntryComponent);
   }
 }
 
@@ -59,6 +60,7 @@ export class KitchenSinkMdc {
     MatProgressSpinnerModule,
     MatSelectModule,
     MatPaginatorModule,
+    MatTooltipModule,
   ],
   declarations: [KitchenSinkMdc, TestEntryComponent],
   exports: [KitchenSinkMdc, TestEntryComponent],
@@ -74,7 +76,7 @@ export class KitchenSinkMdc {
 })
 export class KitchenSinkMdcModule {
   constructor(snackBar: MatSnackBar) {
-    snackBar.open('Hello there');
+    // snackBar.open('Hello there');
   }
 }
 

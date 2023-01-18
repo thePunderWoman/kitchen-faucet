@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.1.0-next.2+sha-aab62c7-with-local-changes
+ * @license Angular v15.1.0-next.2+sha-1939ca0
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9413,7 +9413,7 @@ class Version {
 /**
  * @publicApi
  */
-const VERSION = new Version('15.1.0-next.2+sha-aab62c7-with-local-changes');
+const VERSION = new Version('15.1.0-next.2+sha-1939ca0');
 
 /**
  * @license
@@ -16045,7 +16045,7 @@ function _mergeArrays(parts) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const IS_HYDRATION_ENABLED = new InjectionToken$1("IS_HYDRATION_ENABLED");
+const IS_HYDRATION_ENABLED = new InjectionToken('IS_HYDRATION_ENABLED');
 /**
  * @publicApi
  * @developerPreview
@@ -16054,7 +16054,8 @@ function provideHydrationSupport() {
     // Note: this function can also bring more functionality in a tree-shakable way.
     // For example, by providing hydration-aware implementation of finding nodes vs
     // creating them.
-    return [{
+    return [
+        {
             provide: ENVIRONMENT_INITIALIZER$1,
             useValue: () => {
                 const appRef = inject$2(ApplicationRef);
@@ -16070,7 +16071,8 @@ function provideHydrationSupport() {
         {
             provide: IS_HYDRATION_ENABLED,
             useValue: true,
-        }];
+        }
+    ];
 }
 function getLViewFromRootElement(element) {
     let lView = readPatchedLView(element);
@@ -16168,7 +16170,9 @@ function findExistingNode(host, path) {
 }
 function locateRNodeByPath(path, lView) {
     const pathParts = path.split('.');
-    // First element is a parent node id: `12.nextSibling...`.
+    // First element in a path is:
+    // - either a parent node id: `12.nextSibling...`
+    // - or a 'host' string to indicate that the search should start from the host node
     const firstPathPart = pathParts.shift();
     if (firstPathPart === 'host') {
         return findExistingNode(lView[0], pathParts);
@@ -16185,7 +16189,6 @@ function locateNextRNode(hydrationInfo, tView, lView, tNode, previousTNode, prev
     if (hydrationInfo.nodes[adjustedIndex]) {
         // We know exact location of the node.
         native = locateRNodeByPath(hydrationInfo.nodes[adjustedIndex], lView);
-        debugger;
     }
     else if (tView.firstChild === tNode) {
         // We create a first node in this view.
@@ -16193,18 +16196,19 @@ function locateNextRNode(hydrationInfo, tView, lView, tNode, previousTNode, prev
     }
     else {
         ngDevMode && assertDefined(previousTNode, 'Unexpected state: no current TNode found.');
-        const previousRElement = getNativeByTNode(previousTNode, lView);
+        let previousRElement = getNativeByTNode(previousTNode, lView);
         // TODO: we may want to use this instead?
         // const closest = getClosestRElement(tView, previousTNode, lView);
         if (previousTNodeParent && previousTNode.type === 8 /* TNodeType.ElementContainer */) {
             // Previous node was an `<ng-container>`, so this node is a first child
             // within an element container, so we can locate the container in ngh data
             // structure and use its first child.
-            const sContainer = hydrationInfo.containers[previousTNode.index - HEADER_OFFSET];
-            if (ngDevMode && !sContainer) {
+            const nghContainer = hydrationInfo.containers[previousTNode.index - HEADER_OFFSET];
+            if (ngDevMode && !nghContainer) {
+                // TODO: add better error message.
                 throw new Error('Invalid state.');
             }
-            native = sContainer.firstChild;
+            native = nghContainer.firstChild;
         }
         else {
             // FIXME: this doesn't work for i18n :(
@@ -16214,11 +16218,29 @@ function locateNextRNode(hydrationInfo, tView, lView, tNode, previousTNode, prev
                 native = previousRElement.firstChild;
             }
             else {
+                const previousNodeHydrationInfo = hydrationInfo.containers[previousTNode.index - HEADER_OFFSET];
+                if (previousTNode.type === 2 /* TNodeType.Element */ && previousNodeHydrationInfo) {
+                    // If the previous node is an element, but it also has container info,
+                    // this means that we are processing a node like `<div #vcrTarget>`, which is
+                    // represented in live DOM as `<div></div>...<!--container-->`.
+                    // In this case, there are nodes *after* this element and we need to skip those.
+                    // `+1` stands for an anchor comment node after all the views in this container.
+                    const nodesToSkip = calcViewContainerSize(previousNodeHydrationInfo.views) + 1;
+                    previousRElement = siblingAfter(nodesToSkip, previousRElement);
+                    // TODO: add an assert that `previousRElement` is a comment node.
+                }
                 native = previousRElement.nextSibling;
             }
         }
     }
     return native;
+}
+function calcViewContainerSize(views) {
+    let numNodes = 0;
+    for (let view of views) {
+        numNodes += view.numRootNodes;
+    }
+    return numNodes;
 }
 function siblingAfter(skip, from) {
     let currentNode = from;
@@ -16227,6 +16249,31 @@ function siblingAfter(skip, from) {
         ngDevMode && assertDefined(currentNode, 'Expected more siblings to be present');
     }
     return currentNode;
+}
+/**
+ * Given a current DOM node and an ngh container definition,
+ * walks over the DOM structure, collecting the list of dehydrated views.
+ *
+ * @param currentRNode
+ * @param nghContainer
+ */
+function locateDehydratedViewsInContainer(currentRNode, nghContainer) {
+    const dehydratedViews = [];
+    for (const nghView of nghContainer.views) {
+        const view = Object.assign({}, nghView);
+        if (view.numRootNodes > 0) {
+            // Keep reference to the first node in this view,
+            // so it can be accessed while invoking template instructions.
+            view.firstChild = currentRNode;
+            // Move over to the first node after this view, which can
+            // either be a first node of the next view or an anchor comment
+            // node after the last view in a container.
+            currentRNode = siblingAfter(view.numRootNodes, currentRNode);
+        }
+        dehydratedViews.push(view);
+    }
+    ngDevMode && assertRComment(currentRNode, 'Expecting a comment node as a view container anchor');
+    return [currentRNode, dehydratedViews];
 }
 
 /**
@@ -18163,33 +18210,16 @@ function ɵɵtemplate(index, templateFn, decls, vars, tagName, attrsIndex, local
         templateFirstCreatePass(index, tView, lView, templateFn, decls, vars, tagName, attrsIndex, localRefsIndex) :
         tView.data[adjustedIndex];
     let comment;
-    const dehydratedViews = [];
+    let dehydratedViews = [];
     const ngh = lView[HYDRATION_INFO];
     if (ngh) {
-        debugger;
         let currentRNode = locateNextRNode(ngh, tView, lView, tNode, previousTNode, previousTNodeParent);
-        const sContainer = ngh.containers[index];
+        const nghContainer = ngh.containers[index];
         ngDevMode &&
-            assertDefined(sContainer, 'There is no hydration info available for this template');
-        const sViews = sContainer.views;
-        for (const sView of sViews) {
-            const view = Object.assign({}, sView);
-            if (view.numRootNodes > 0) {
-                debugger;
-                // Keep reference to the first node in this view,
-                // so it can be accessed while invoking template instructions.
-                view.firstChild = currentRNode;
-                // Move over to the first node after this view, which can
-                // either be a first node of the next view or an anchor comment
-                // node after the last view in a container.
-                currentRNode = siblingAfter(view.numRootNodes, currentRNode);
-            }
-            dehydratedViews.push(view);
-        }
-        // After processing of all views, the `currentRNode` points
-        // to the first node *after* the last view, which must be a
-        // comment node which acts as an anchor.
-        comment = currentRNode;
+            assertDefined(nghContainer, 'There is no hydration info available for this template');
+        const [anchorRNode, views] = locateDehydratedViewsInContainer(currentRNode, nghContainer);
+        comment = anchorRNode;
+        dehydratedViews = views;
         ngDevMode && assertRComment(comment, 'Expecting a comment node in template instruction');
         ngDevMode && markRNodeAsClaimedForHydration(comment);
     }
@@ -18201,7 +18231,7 @@ function ɵɵtemplate(index, templateFn, decls, vars, tagName, attrsIndex, local
     attachPatchData(comment, lView);
     const lContainer = createLContainer(comment, lView, comment, tNode);
     lView[adjustedIndex] = lContainer;
-    if (ngh) {
+    if (ngh && dehydratedViews.length > 0) {
         lContainer[DEHYDRATED_VIEWS] = dehydratedViews;
     }
     addToViewTree(lView, lContainer);
@@ -18493,14 +18523,31 @@ function ɵɵelementContainerStart(index, attrsIndex, localRefsIndex) {
     let native;
     const ngh = lView[HYDRATION_INFO];
     if (ngh !== null) {
-        const sContainer = ngh.containers[index];
+        const nghContainer = ngh.containers[index];
         ngDevMode &&
-            assertDefined(sContainer, 'There is no hydration info available for this element container');
+            assertDefined(nghContainer, 'There is no hydration info available for this element container');
         const currentRNode = locateNextRNode(ngh, tView, lView, tNode, previousTNode, previousTNodeParent);
-        // Store a reference to the first node in a container,
-        // so it can be referenced while invoking further instructions.
-        sContainer.firstChild = currentRNode;
-        native = siblingAfter(sContainer.numRootNodes, currentRNode);
+        if (nghContainer.views) {
+            // This <ng-container> is also annotated as a view container.
+            // Extract all dehydrated views following instructions from ngh
+            // and store this info for later reuse in `createContainerRef`.
+            const [anchorRNode, views] = locateDehydratedViewsInContainer(currentRNode, nghContainer);
+            native = anchorRNode;
+            if (views.length > 0) {
+                // Store dehydrated views info in ngh data structure for later reuse
+                // while creating a ViewContainerRef instance, see `createContainerRef`.
+                nghContainer.dehydratedViews = views;
+            }
+        }
+        else {
+            // This is a plain `<ng-container>`, which is *not* used
+            // as the ViewContainerRef anchor, so we can rely on `numRootNodes`.
+            //
+            // Store a reference to the first node in a container,
+            // so it can be referenced while invoking further instructions.
+            nghContainer.firstChild = currentRNode;
+            native = siblingAfter(nghContainer.numRootNodes, currentRNode);
+        }
         ngDevMode && assertRComment(native, 'Expecting a comment node in elementContainer instruction');
         ngDevMode && markRNodeAsClaimedForHydration(native);
     }
@@ -25601,13 +25648,13 @@ const R3ViewContainerRef = class ViewContainerRef extends VE_ViewContainerRef {
         let rNode;
         let origHydrationInfo = null;
         if (dehydratedView) {
-            const hostLView = this._lContainer[PARENT];
-            // FIXME: this needs an update!
-            rNode = findExistingNode(hostLView[DECLARATION_COMPONENT_VIEW][HOST], dehydratedView.nodes[0]);
+            // Pointer to a host DOM element.
+            rNode = dehydratedView.firstChild;
             // Read hydration info and pass it over to the component view.
             const ngh = rNode.getAttribute('ngh');
             if (ngh) {
                 const hydrationInfo = JSON.parse(ngh);
+                hydrationInfo.firstChild = rNode.firstChild;
                 rNode.removeAttribute('ngh');
                 origHydrationInfo = setCurrentHydrationInfo$1(hydrationInfo);
                 ngDevMode && markRNodeAsClaimedForHydration(rNode);
@@ -25727,10 +25774,17 @@ function getOrCreateViewRefs(lContainer) {
  */
 function createContainerRef(hostTNode, hostLView) {
     ngDevMode && assertTNodeType(hostTNode, 12 /* TNodeType.AnyContainer */ | 3 /* TNodeType.AnyRNode */);
-    let ngh;
     let lContainer;
+    let nghContainer;
+    let dehydratedViews = [];
+    const ngh = hostLView[HYDRATION_INFO];
+    if (ngh) {
+        const index = hostTNode.index - HEADER_OFFSET;
+        nghContainer = ngh.containers[index];
+        ngDevMode &&
+            assertDefined(nghContainer, 'There is no hydration info available for this container');
+    }
     const slotValue = hostLView[hostTNode.index];
-    // debugger;
     if (isLContainer(slotValue)) {
         // If the host is a container, we don't need to create a new LContainer
         lContainer = slotValue;
@@ -25743,12 +25797,27 @@ function createContainerRef(hostTNode, hostLView) {
         // it again.
         if (hostTNode.type & 8 /* TNodeType.ElementContainer */) {
             commentNode = unwrapRNode(slotValue);
+            if (ngh && nghContainer && Array.isArray(nghContainer.dehydratedViews)) {
+                // When we create an LContainer based on `<ng-container>`, the container
+                // is already processed, including dehydrated views info. Reuse this info
+                // and erase it in the ngh data to avoid memory leaks.
+                dehydratedViews = nghContainer.dehydratedViews;
+                nghContainer.dehydratedViews = [];
+            }
         }
         else {
-            ngh = hostLView[HYDRATION_INFO];
             if (ngh) {
-                // FIXME: this needs an update!
-                commentNode = findExistingNode(hostLView[DECLARATION_COMPONENT_VIEW][HOST], ngh.nodes[hostTNode.index - HEADER_OFFSET]);
+                // Start with a node that immediately follows the DOM node found
+                // in an LView slot. This node is:
+                // - either an anchor comment node of this container if it's empty
+                // - or a first element of the first view in this container
+                let currentRNode = slotValue.nextSibling;
+                const [anchorRNode, views] = locateDehydratedViewsInContainer(currentRNode, nghContainer);
+                commentNode = anchorRNode;
+                dehydratedViews = views;
+                ngDevMode &&
+                    assertRComment(commentNode, 'Expecting a comment node in template instruction');
+                ngDevMode && markRNodeAsClaimedForHydration(commentNode);
             }
             else {
                 // If the host is a regular element, we have to insert a comment node manually which will
@@ -25764,17 +25833,8 @@ function createContainerRef(hostTNode, hostLView) {
         }
         hostLView[hostTNode.index] = lContainer =
             createLContainer(slotValue, hostLView, commentNode, hostTNode);
-        if (ngh) {
-            debugger;
-            // FIXME: this needs an update!
-            // Look for all views within this container.
-            const nghContainer = ngh.containers.find((c) => c.anchor === hostTNode.index - HEADER_OFFSET);
-            if (nghContainer) {
-                // Copy the views object, since we'll be removing elements
-                // from it later.
-                // TODO: consider doing DOM lookup here and store DOM nodes instead.
-                lContainer[DEHYDRATED_VIEWS] = [...nghContainer.views];
-            }
+        if (ngh && dehydratedViews.length > 0) {
+            lContainer[DEHYDRATED_VIEWS] = dehydratedViews;
         }
         addToViewTree(hostLView, lContainer);
     }

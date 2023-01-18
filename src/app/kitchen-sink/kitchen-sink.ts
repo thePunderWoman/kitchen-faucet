@@ -84,10 +84,10 @@ export class KitchenSink {
     elementRef: ElementRef<HTMLElement>,
     bottomSheet: MatBottomSheet,
   ) {
-    focusMonitor.focusVia(elementRef, 'program');
-    snackBar.open('Hello there');
-    dialog.open(TestEntryComponent);
-    bottomSheet.open(TestEntryComponent);
+    // focusMonitor.focusVia(elementRef, 'program');
+    // snackBar.open('Hello there');
+    // dialog.open(TestEntryComponent);
+    // bottomSheet.open(TestEntryComponent);
 
     // Do a sanity check on the viewport ruler.
     viewportRuler.getViewportRect();
