@@ -1,11 +1,12 @@
 <!-- Hydration Problems -->
+<!-- Direct DOM Manipulation -->
 <!-- Expecting an element node with mat-option tag name in the elementStart instruction [Expected=> mat-option == mat-autocomplete <=Actual] -->
-<h2>Autocomplete</h2>
+<!-- <h2>Autocomplete</h2>
 <mat-autocomplete>
   <mat-option>Grace Hopper</mat-option>
   <mat-option>Anita Borg</mat-option>
   <mat-option>Ada Lovelace</mat-option>
-</mat-autocomplete>
+</mat-autocomplete> -->
 
 <h2>Button</h2>
 
@@ -56,15 +57,13 @@
 <button matTooltip="Action!">Go</button>
 
 <!-- Hydration Problems -->
-<!-- <h2>MDC chips</h2> -->
+<h2>MDC chips</h2>
 
-<!-- Hydration Problems -->
-<!-- Direct DOM manipulation causing flicker -->
-<!-- <mat-chip-set>
+<mat-chip-set>
   <mat-basic-chip>Basic Chip 1</mat-basic-chip>
   <mat-basic-chip>Basic Chip 2</mat-basic-chip>
   <mat-basic-chip>Basic Chip 3</mat-basic-chip>
-</mat-chip-set> -->
+</mat-chip-set>
 
 <!-- Hydration Problems -->
 <!-- Cannot read properties of null (reading 'nodeType') -->
@@ -76,7 +75,7 @@
 </mat-chip-listbox> -->
 
 <!-- Hydration Problems -->
-<!-- Cannot read properties of undefined (reading 'nodeType') -->
+<!-- Direct DOM Manipulation -->
 <!-- <h2>MDC menu</h2>
 <button mat-button [matMenuTriggerFor]="menu">Open</button>
 <mat-menu #menu="matMenu">
@@ -100,6 +99,7 @@
 <mat-radio-button name="onions" disabled>Red</mat-radio-button>
 
 <!-- Hydration Problems -->
+<!-- Direct DOM Manipulation -->
 <!-- Expecting an element node with mat-option tag name in the elementStart instruction [Expected=> mat-option == mat-select <=Actual] -->
 <!-- <h2>MDC Select</h2>
 <mat-form-field>
@@ -134,6 +134,8 @@
 
 
 <!-- Hydration Problems -->
+<!-- Direct DOM Manipulation -->
+
 <!-- Expected different element node: [Expected=> mat-tab == mat-tab-header <=Actual] -->
 <!--
   Note that we set the `selectedIndex` here to hit the code path
@@ -159,7 +161,7 @@
 <mat-tab-nav-panel #tabPanel></mat-tab-nav-panel> -->
 
 <!-- Hydration Problems -->
-<!-- Cannot read properties of undefined (reading 'nodeType') -->
+<!-- Direct DOM Manipulation in Select -->
 <!-- <h2>MDC Paginator</h2>
 
 <mat-paginator [length]="100"

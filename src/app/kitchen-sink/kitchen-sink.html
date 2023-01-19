@@ -8,7 +8,7 @@
 <h2>Button</h2>
 
 <button mat-button>go</button>
-<!-- <button mat-icon-button><mat-icon>search</mat-icon></button>
+<button mat-icon-button><mat-icon>search</mat-icon></button>
 <button mat-raised-button>go</button>
 <button mat-fab><mat-icon>home</mat-icon></button>
 <button mat-mini-fab><mat-icon>favorite</mat-icon></button>
@@ -64,7 +64,7 @@
 
 <mat-checkbox>With a label</mat-checkbox>
 <mat-checkbox></mat-checkbox>Without a label
-
+<!-- 
 <h2>Chips</h2>
 
 <mat-chip-list>
@@ -78,8 +78,9 @@
   <mat-basic-chip>Scallion</mat-basic-chip>
   <mat-basic-chip>Cilantro</mat-basic-chip>
 </mat-chip-list>
+-->
 
-<h2>Datepicker</h2>
+<!-- <h2>Datepicker</h2>
 
 <mat-form-field>
   <input type="text" matInput [matDatepicker]="birthday" placeholder="Birthday">
@@ -93,7 +94,8 @@
   <input type="text" disabled matInput [matDatepicker]="departureDate" placeholder="Departure date">
   <mat-datepicker-toggle matSuffix [for]="departureDate"></mat-datepicker-toggle>
   <mat-datepicker #departureDate></mat-datepicker>
-</mat-form-field>
+</mat-form-field> -->
+
 
 <h2>Grid list</h2>
 
@@ -107,7 +109,7 @@
 <h2>Icon</h2>
 <mat-icon>grade</mat-icon>
 
-<h2>Input</h2>
+<!-- <h2>Input</h2>
 
 <mat-form-field floatLabel="never">
   <input matInput placeholder="name" type="text">
@@ -128,7 +130,7 @@
   <span matSuffix>.00</span>
   <mat-hint>Dolla dolla bills</mat-hint>
   <mat-error>Recession</mat-error>
-</mat-form-field>
+</mat-form-field> -->
 
 <h2>List</h2>
 
@@ -150,14 +152,14 @@
   <button mat-list-item>Third action</button>
 </mat-action-list>
 
-<h2>Menu</h2>
+<!-- <h2>Menu</h2>
 
 <button mat-button [matMenuTriggerFor]="menu">Open</button>
 <mat-menu #menu="matMenu">
   <button mat-menu-item>Mercy</button>
   <button mat-menu-item>Lucio</button>
   <button mat-menu-item disabled>Sombra</button>
-</mat-menu>
+</mat-menu> -->
 
 <h2>Progress bar</h2>
 
@@ -186,14 +188,14 @@
 <mat-radio-button name="onions">Green</mat-radio-button>
 <mat-radio-button name="onions" disabled>Red</mat-radio-button>
 
-<h2>Select</h2>
+<!-- <h2>Select</h2>
 <mat-form-field>
   <mat-select value="ceramic">
     <mat-option value="glass">Glass</mat-option>
     <mat-option value="ceramic">Ceramic</mat-option>
     <mat-option value="steel">Steel</mat-option>
   </mat-select>
-</mat-form-field>
+</mat-form-field> -->
 
 <h2>Sidenav</h2>
 <mat-sidenav-container>
@@ -215,7 +217,7 @@
 <mat-slider tickInterval="1" min="1" max="10" value="5" thumbLabel></mat-slider>
 <mat-slider disabled></mat-slider>
 
-<h2>Tabs</h2>
+<!-- <h2>Tabs</h2>
 <mat-tab-group>
   <mat-tab label="Overview">
     The overview
@@ -232,14 +234,14 @@
  <a mat-tab-link href="https://google.com">Google</a>
  <a mat-tab-link href="https://google.com" [active]="true">Also Google</a>
 </nav>
-<mat-tab-nav-panel #tabPanel></mat-tab-nav-panel>
+<mat-tab-nav-panel #tabPanel></mat-tab-nav-panel> -->
 
-<h2>Paginator</h2>
+<!-- <h2>Paginator</h2>
 
 <mat-paginator [length]="100"
                [pageSizeOptions]="[5, 10, 25, 100]"
                aria-label="Select page">
-</mat-paginator>
+</mat-paginator> -->
 
 <h2>Toolbar</h2>
 <mat-toolbar>Basic toolbar</mat-toolbar>
@@ -248,7 +250,7 @@
   <mat-toolbar-row>Toolbar</mat-toolbar-row>
 </mat-toolbar>
 
-<h2>Sort</h2>
+<!-- <h2>Sort</h2>
 
 <table matSort>
   <tr>
@@ -266,12 +268,12 @@
     <td>67</td>
     <td>4</td>
   </tr>
-</table>
--->
+</table> -->
+
 <h2>Tooltip</h2>
 
 <button matTooltip="Action!">Go</button>
-<!--
+
 <h2>Autosize textarea</h2>
 <textarea cdkTextareaAutosize cdkAutosizeMaxRows="10"></textarea>
 
@@ -285,7 +287,7 @@
   <mat-action-row>Action</mat-action-row>
 </mat-expansion-panel>
 
-<h2>CDK Table</h2>
+<!-- <h2>CDK Table</h2>
 
 <cdk-table #table [dataSource]="tableDataSource">
   <ng-container cdkColumnDef="userId">
@@ -295,9 +297,9 @@
 
   <cdk-header-row *cdkHeaderRowDef="tableColumns" ></cdk-header-row>
   <cdk-row *cdkRowDef="let row; columns: tableColumns;"></cdk-row>
-</cdk-table>
+</cdk-table> -->
 
-<h2>Material Table</h2>
+<!-- <h2>Material Table</h2>
 
 <mat-table [dataSource]="tableDataSource">
   <ng-container matColumnDef="userId">
@@ -307,9 +309,9 @@
 
   <mat-header-row *matHeaderRowDef="tableColumns"></mat-header-row>
   <mat-row *matRowDef="let row; columns: tableColumns;"></mat-row>
-</mat-table>
+</mat-table> -->
 
-<h2>Native table with sticky header and footer</h2>
+<!-- <h2>Native table with sticky header and footer</h2>
 
 <table mat-table [dataSource]="tableDataSource">
   <ng-container matColumnDef="userId">
@@ -321,7 +323,7 @@
   <tr mat-header-row *matHeaderRowDef="tableColumns; sticky: true"></tr>
   <tr mat-row *matRowDef="let row; columns: tableColumns;"></tr>
   <tr mat-footer-row *matFooterRowDef="tableColumns; sticky: true"></tr>
-</table>
+</table> -->
 
 
 <h2>Selection list</h2>
@@ -332,6 +334,7 @@
   <mat-list-option value="oranges">Oranges</mat-list-option>
 </mat-selection-list>
 
+<!--
 <h2>Vertical Stepper</h2>
 
 <mat-stepper orientation="vertical">
@@ -350,14 +353,14 @@
     <ng-template matStepLabel>NgTemplate Label #2</ng-template>
     Content 2
   </mat-step>
-</mat-stepper>
+</mat-stepper> -->
 
-<h2>Horizontal Stepper</h2>
+<!-- <h2>Horizontal Stepper</h2>
 
 <mat-stepper>
   <mat-step label="Step 1">Content 1</mat-step>
   <mat-step label="Step 2">Content 2</mat-step>
-</mat-stepper>
+</mat-stepper> -->
 
 <h2>Focus trap</h2>
 
@@ -389,7 +392,7 @@
 
 <h2>YouTube player</h2>
 <youtube-player videoId="dQw4w9WgXcQ"></youtube-player>
-
+<!--
 <h2>Google Map</h2> -->
 <!-- <google-map height="400px" width="750px">
   <map-marker [position]="{lat: 24, lng: 12}"></map-marker>

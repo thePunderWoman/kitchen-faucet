@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.1.0-next.2+sha-1939ca0
+ * @license Angular v15.1.0-next.2+sha-1939ca0-with-local-changes
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9026,7 +9026,7 @@ class Version {
 /**
  * @publicApi
  */
-const VERSION = new Version('15.1.0-next.2+sha-1939ca0');
+const VERSION = new Version('15.1.0-next.2+sha-1939ca0-with-local-changes');
 
 /**
  * @license
@@ -15800,7 +15800,6 @@ function findExistingNode(host, path) {
     for (const op of path) {
         if (!node) {
             // TODO: add a dev-mode assertion here.
-            debugger;
             throw new Error(`findExistingNode: failed to find node at ${path}.`);
         }
         switch (op) {
@@ -15814,7 +15813,6 @@ function findExistingNode(host, path) {
     }
     if (!node) {
         // TODO: add a dev-mode assertion here.
-        debugger;
         throw new Error(`findExistingNode: failed to find node at ${path}.`);
     }
     return node;
@@ -25462,7 +25460,8 @@ function createContainerRef(hostTNode, hostLView) {
                 // in an LView slot. This node is:
                 // - either an anchor comment node of this container if it's empty
                 // - or a first element of the first view in this container
-                let currentRNode = slotValue.nextSibling;
+                let currentRNode = unwrapRNode(slotValue).nextSibling;
+                // TODO: Add assert that the currentRNode exists
                 const [anchorRNode, views] = locateDehydratedViewsInContainer(currentRNode, nghContainer);
                 commentNode = anchorRNode;
                 dehydratedViews = views;

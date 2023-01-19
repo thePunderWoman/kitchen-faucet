@@ -22,7 +22,7 @@ if (isClient) {
   selector: 'kitchen-sink-root',
   template: `
     <h1>Kitchen sink app</h1>
-    <!-- <kitchen-sink></kitchen-sink> -->
+    <kitchen-sink></kitchen-sink>
     <kitchen-sink-mdc></kitchen-sink-mdc>
   `,
 })
