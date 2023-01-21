@@ -1,10 +1,10 @@
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 
-import { KitchenSinkRootModule } from './app/app.module';
+import { KitchenFaucetRootModule } from './app/app.module';
 
 
 function bootstrap() {
-    platformBrowserDynamic().bootstrapModule(KitchenSinkRootModule)
+    platformBrowserDynamic().bootstrapModule(KitchenFaucetRootModule)
   .catch(err => console.error(err));
   };
 

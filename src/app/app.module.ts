@@ -1,8 +1,8 @@
 import {Component, NgModule, ɵprovideHydrationSupport as provideHydrationSupport} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import {KitchenSinkMdcModule} from './kitchen-sink-mdc/kitchen-sink-mdc';
-import {KitchenSinkModule} from './kitchen-sink/kitchen-sink';
+import {KitchenFaucetMdcModule} from './kitchen-faucet-mdc/kitchen-faucet-mdc';
+import {KitchenFaucetModule} from './kitchen-faucet/kitchen-faucet';
 
 const isClient = typeof window !== 'undefined';
 if (isClient) {
@@ -19,25 +19,25 @@ if (isClient) {
 }
 
 @Component({
-  selector: 'kitchen-sink-root',
+  selector: 'kitchen-faucet-root',
   template: `
-    <h1>Kitchen sink app</h1>
-    <kitchen-sink></kitchen-sink>
-    <kitchen-sink-mdc></kitchen-sink-mdc>
+    <h1>Kitchen faucet app</h1>
+    <!-- <kitchen-faucet></kitchen-faucet> -->
+    <kitchen-faucet-mdc></kitchen-faucet-mdc>
   `,
 })
-export class KitchenSinkRoot {}
+export class KitchenFaucetRoot {}
 
 @NgModule({
-  declarations: [KitchenSinkRoot],
-  exports: [KitchenSinkRoot],
-  bootstrap: [KitchenSinkRoot],
+  declarations: [KitchenFaucetRoot],
+  exports: [KitchenFaucetRoot],
+  bootstrap: [KitchenFaucetRoot],
     imports: [
     BrowserModule.withServerTransition({ appId: 'kitchen-faucet' }),
-    KitchenSinkMdcModule,
-    KitchenSinkModule,
+    KitchenFaucetMdcModule,
+    KitchenFaucetModule,
     BrowserAnimationsModule,
   ],
   providers: [isClient ? provideHydrationSupport() : []],
 })
-export class KitchenSinkRootModule { }
+export class KitchenFaucetRootModule { }

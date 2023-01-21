@@ -1,12 +1,12 @@
 /**
- * @license Angular v15.1.0-next.2+sha-1939ca0-with-local-changes
+ * @license Angular v15.1.0-next.2+sha-2ebdd25-with-local-changes
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
 
 import { ɵsetRootDomAdapter, DOCUMENT, XhrFactory, PlatformLocation, ɵgetDOM, ɵPLATFORM_SERVER_ID, ViewportScroller, ɵNullViewportScroller } from '@angular/common';
 import * as i0 from '@angular/core';
-import { Injectable, Inject, InjectionToken, inject, EnvironmentInjector, Optional, ViewEncapsulation, RendererStyleFlags2, APP_ID, NgModule, Injector, PLATFORM_ID, PLATFORM_INITIALIZER, ɵALLOW_MULTIPLE_PLATFORMS, RendererFactory2, NgZone, Testability, ɵTESTABILITY, ɵsetDocument, createPlatformFactory, platformCore, Renderer2, ɵTYPE, ɵcollectNativeNodes, ɵTVIEW, ɵHEADER_OFFSET, ɵHOST, ɵunwrapRNode, ɵCONTAINER_HEADER_OFFSET, ɵisRootView, ɵCONTEXT, ɵgetLViewById, ApplicationRef, ɵisPromise, importProvidersFrom, ɵinternalCreateApplication, Version } from '@angular/core';
+import { Injectable, Inject, InjectionToken, inject, EnvironmentInjector, Optional, ViewEncapsulation, RendererStyleFlags2, APP_ID, NgModule, Injector, PLATFORM_ID, PLATFORM_INITIALIZER, ɵALLOW_MULTIPLE_PLATFORMS, RendererFactory2, NgZone, Testability, ɵTESTABILITY, ɵsetDocument, createPlatformFactory, platformCore, Renderer2, ɵTYPE, ɵcollectNativeNodes, ɵnavigateParentTNodes, ɵTVIEW, ɵHEADER_OFFSET, ɵHOST, ɵunwrapRNode, ɵCONTAINER_HEADER_OFFSET, ɵisRootView, ɵCONTEXT, ɵgetLViewById, ApplicationRef, ɵisPromise, importProvidersFrom, ɵinternalCreateApplication, Version } from '@angular/core';
 import * as i1 from '@angular/platform-browser';
 import { ɵBrowserDomAdapter, ɵflattenStyles, ɵNAMESPACE_URIS, ɵshimContentAttribute, ɵshimHostAttribute, ɵSharedStylesHost, ɵTRANSITION_ID, TransferState, ɵescapeHtml, EVENT_MANAGER_PLUGINS, BrowserModule } from '@angular/platform-browser';
 import * as domino from 'domino';
@@ -137,9 +137,9 @@ class PlatformState {
         return this._doc;
     }
 }
-PlatformState.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: PlatformState, deps: [{ token: DOCUMENT }], target: i0.ɵɵFactoryTarget.Injectable });
-PlatformState.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: PlatformState });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: PlatformState, decorators: [{
+PlatformState.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: PlatformState, deps: [{ token: DOCUMENT }], target: i0.ɵɵFactoryTarget.Injectable });
+PlatformState.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: PlatformState });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: PlatformState, decorators: [{
             type: Injectable
         }], ctorParameters: function () {
         return [{ type: undefined, decorators: [{
@@ -183,9 +183,9 @@ class ServerXhr {
         return new xhr2.XMLHttpRequest();
     }
 }
-ServerXhr.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerXhr, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
-ServerXhr.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerXhr });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerXhr, decorators: [{
+ServerXhr.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerXhr, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
+ServerXhr.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerXhr });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerXhr, decorators: [{
             type: Injectable
         }] });
 class ZoneMacroTaskWrapper {
@@ -388,9 +388,9 @@ class ServerPlatformLocation {
         return undefined;
     }
 }
-ServerPlatformLocation.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerPlatformLocation, deps: [{ token: DOCUMENT }, { token: INITIAL_CONFIG, optional: true }], target: i0.ɵɵFactoryTarget.Injectable });
-ServerPlatformLocation.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerPlatformLocation });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerPlatformLocation, decorators: [{
+ServerPlatformLocation.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerPlatformLocation, deps: [{ token: DOCUMENT }, { token: INITIAL_CONFIG, optional: true }], target: i0.ɵɵFactoryTarget.Injectable });
+ServerPlatformLocation.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerPlatformLocation });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerPlatformLocation, decorators: [{
             type: Injectable
         }], ctorParameters: function () {
         return [{ type: undefined, decorators: [{
@@ -434,9 +434,9 @@ class ServerEventManagerPlugin /* extends EventManagerPlugin which is private */
         return this.addEventListener(target, eventName, handler);
     }
 }
-ServerEventManagerPlugin.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerEventManagerPlugin /* extends EventManagerPlugin which is private */, deps: [{ token: DOCUMENT }], target: i0.ɵɵFactoryTarget.Injectable });
-ServerEventManagerPlugin.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerEventManagerPlugin /* extends EventManagerPlugin which is private */ });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerEventManagerPlugin /* extends EventManagerPlugin which is private */, decorators: [{
+ServerEventManagerPlugin.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerEventManagerPlugin /* extends EventManagerPlugin which is private */, deps: [{ token: DOCUMENT }], target: i0.ɵɵFactoryTarget.Injectable });
+ServerEventManagerPlugin.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerEventManagerPlugin /* extends EventManagerPlugin which is private */ });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerEventManagerPlugin /* extends EventManagerPlugin which is private */, decorators: [{
             type: Injectable
         }], ctorParameters: function () {
         return [{ type: undefined, decorators: [{
@@ -491,9 +491,9 @@ class ServerRendererFactory2 {
     begin() { }
     end() { }
 }
-ServerRendererFactory2.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerRendererFactory2, deps: [{ token: i1.EventManager }, { token: i0.NgZone }, { token: DOCUMENT }, { token: i1.ɵSharedStylesHost }], target: i0.ɵɵFactoryTarget.Injectable });
-ServerRendererFactory2.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerRendererFactory2 });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerRendererFactory2, decorators: [{
+ServerRendererFactory2.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerRendererFactory2, deps: [{ token: i1.EventManager }, { token: i0.NgZone }, { token: DOCUMENT }, { token: i1.ɵSharedStylesHost }], target: i0.ɵɵFactoryTarget.Injectable });
+ServerRendererFactory2.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerRendererFactory2 });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerRendererFactory2, decorators: [{
             type: Injectable
         }], ctorParameters: function () {
         return [{ type: i1.EventManager }, { type: i0.NgZone }, { type: undefined, decorators: [{
@@ -752,9 +752,9 @@ class ServerStylesHost extends ɵSharedStylesHost {
         this._styleNodes.forEach(styleNode => styleNode.remove());
     }
 }
-ServerStylesHost.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerStylesHost, deps: [{ token: DOCUMENT }, { token: ɵTRANSITION_ID, optional: true }], target: i0.ɵɵFactoryTarget.Injectable });
-ServerStylesHost.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerStylesHost });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerStylesHost, decorators: [{
+ServerStylesHost.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerStylesHost, deps: [{ token: DOCUMENT }, { token: ɵTRANSITION_ID, optional: true }], target: i0.ɵɵFactoryTarget.Injectable });
+ServerStylesHost.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerStylesHost });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerStylesHost, decorators: [{
             type: Injectable
         }], ctorParameters: function () {
         return [{ type: undefined, decorators: [{
@@ -811,10 +811,10 @@ function serializeTransferStateFactory(doc, appId, transferStore) {
  */
 class ServerTransferStateModule {
 }
-ServerTransferStateModule.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerTransferStateModule, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-ServerTransferStateModule.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "14.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerTransferStateModule });
-ServerTransferStateModule.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerTransferStateModule });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerTransferStateModule, decorators: [{
+ServerTransferStateModule.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerTransferStateModule, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+ServerTransferStateModule.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "14.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerTransferStateModule });
+ServerTransferStateModule.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerTransferStateModule });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerTransferStateModule, decorators: [{
             type: NgModule,
             args: [{}]
         }] });
@@ -864,9 +864,9 @@ const SERVER_RENDER_PROVIDERS = [
  */
 class ServerModule {
 }
-ServerModule.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerModule, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-ServerModule.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "14.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerModule, imports: [HttpClientModule, NoopAnimationsModule], exports: [BrowserModule] });
-ServerModule.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerModule, providers: [
+ServerModule.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerModule, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+ServerModule.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "14.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerModule, imports: [HttpClientModule, NoopAnimationsModule], exports: [BrowserModule] });
+ServerModule.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerModule, providers: [
         TRANSFER_STATE_SERIALIZATION_PROVIDERS,
         SERVER_RENDER_PROVIDERS,
         SERVER_HTTP_PROVIDERS,
@@ -874,7 +874,7 @@ ServerModule.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "
         { provide: ɵTESTABILITY, useValue: null },
         { provide: ViewportScroller, useClass: ɵNullViewportScroller },
     ], imports: [HttpClientModule, NoopAnimationsModule, BrowserModule] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-1939ca0-with-local-changes", ngImport: i0, type: ServerModule, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "15.1.0-next.2+sha-2ebdd25-with-local-changes", ngImport: i0, type: ServerModule, decorators: [{
             type: NgModule,
             args: [{
                     exports: [BrowserModule],
@@ -973,6 +973,7 @@ function navigateBetweenSiblings(start, finish) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+const NG_NON_HYDRATABLE = 'ngNonHydratable';
 function _getPlatform(platformFactory, options) {
     var _a;
     const extraProviders = (_a = options.platformProviders) !== null && _a !== void 0 ? _a : [];
@@ -1030,6 +1031,18 @@ function findClosestElementTNode(tNode) {
     }
     return parentTNode;
 }
+function hasNgNonHydratableAttr(tNode) {
+    var _a;
+    // TODO: we need to iterate over `tNode.mergedAttrs` better
+    // to avoid cases when `ngNonHydratable` is an attribute value,
+    // e.g. `<div title="ngNonHydratable"></div>`.
+    return !!((_a = tNode.mergedAttrs) === null || _a === void 0 ? void 0 : _a.includes('ngNonHydratable'));
+}
+function isInNonHydratableBlock(tNode, lView) {
+    const foundTNode = ɵnavigateParentTNodes(tNode, lView, hasNgNonHydratableAttr);
+    // in a block when we have a TNode and it's different than the root node
+    return foundTNode !== null && foundTNode !== tNode;
+}
 function serializeLView(lView, hostNode) {
     const ngh = {
         containers: {},
@@ -1054,7 +1067,9 @@ function serializeLView(lView, hostNode) {
                 // since all DOM nodes in this projection were handled while processing
                 // a parent lView, which contains those nodes.
                 if (headTNode && !isProjectionTNode(headTNode)) {
-                    ngh.nodes[headTNode.index - ɵHEADER_OFFSET] = calcPathForNode(tView, lView, headTNode);
+                    if (!isInNonHydratableBlock(headTNode, lView)) {
+                        ngh.nodes[headTNode.index - ɵHEADER_OFFSET] = calcPathForNode(tView, lView, headTNode);
+                    }
                 }
             }
         }
@@ -1074,8 +1089,11 @@ function serializeLView(lView, hostNode) {
             // We only handle the DOM Node case here
             if (Array.isArray(hostNode)) {
                 // this is a component
+                // Check to see if it has ngNonHydratable
                 targetNode = ɵunwrapRNode(hostNode);
-                annotateForHydration(targetNode, hostNode);
+                if (!targetNode.hasAttribute(NG_NON_HYDRATABLE)) {
+                    annotateForHydration(targetNode, hostNode);
+                }
             }
             else {
                 // this is a regular node
@@ -1086,8 +1104,11 @@ function serializeLView(lView, hostNode) {
         }
         else if (Array.isArray(lView[i])) {
             // this is a component
+            // Check to see if it has ngNonHydratable
             targetNode = ɵunwrapRNode(lView[i][ɵHOST]);
-            annotateForHydration(targetNode, lView[i]);
+            if (!targetNode.hasAttribute('ngNonHydratable')) {
+                annotateForHydration(targetNode, lView[i]);
+            }
         }
         else if (isTI18nNode(tNode)) {
             // Process i18n text nodes...
@@ -1097,10 +1118,12 @@ function serializeLView(lView, hostNode) {
                 const appendNow = (opCode & I18nCreateOpCode.APPEND_EAGERLY) === I18nCreateOpCode.APPEND_EAGERLY;
                 const index = opCode >>> I18nCreateOpCode.SHIFT;
                 const tNode = tView.data[index];
-                // if (appendNow) {
-                const parentTNode = findClosestElementTNode(tNode);
-                const path = calcPathForNode(tView, lView, tNode, parentTNode);
-                ngh.nodes[tNode.index - ɵHEADER_OFFSET] = path;
+                if (!isInNonHydratableBlock(tNode, lView)) {
+                    // if (appendNow) {
+                    const parentTNode = findClosestElementTNode(tNode);
+                    const path = calcPathForNode(tView, lView, tNode, parentTNode);
+                    ngh.nodes[tNode.index - ɵHEADER_OFFSET] = path;
+                }
                 // }
             }
         }
@@ -1108,8 +1131,10 @@ function serializeLView(lView, hostNode) {
             if (Array.isArray(tNode.insertBeforeIndex) && tNode.insertBeforeIndex[0] !== null) {
                 // A root node within i18n block.
                 // TODO: add a comment on *why* we need a path here.
-                const path = calcPathForNode(tView, lView, tNode);
-                ngh.nodes[tNode.index - ɵHEADER_OFFSET] = path;
+                if (!isInNonHydratableBlock(tNode, lView)) {
+                    const path = calcPathForNode(tView, lView, tNode);
+                    ngh.nodes[tNode.index - ɵHEADER_OFFSET] = path;
+                }
             }
         }
         else {
@@ -1137,47 +1162,28 @@ function serializeLView(lView, hostNode) {
                 }
                 if (nextTNode) {
                     const index = nextTNode.index - ɵHEADER_OFFSET;
-                    const path = calcPathForNode(tView, lView, nextTNode);
-                    ngh.nodes[index] = path;
+                    if (!isInNonHydratableBlock(nextTNode, lView)) {
+                        const path = calcPathForNode(tView, lView, nextTNode);
+                        ngh.nodes[index] = path;
+                    }
                 }
             }
             else {
-                // ... otherwise, this is a DOM element, for which we may need to
-                // serialize in some cases.
-                targetNode = lView[i];
-                if (!isConnected(targetNode)) {
-                    debugger;
-                    console.log('INDEX: ', i - ɵHEADER_OFFSET);
-                    console.log('TAGNAME: ', targetNode.tagName);
-                    ngh.nodes[i - ɵHEADER_OFFSET] = "-";
-                    continue;
-                }
                 // Check if projection next is not the same as next, in which case
                 // the node would not be found at creation time at runtime and we
                 // need to provide a location to that node.
                 if (tNode.projectionNext && tNode.projectionNext !== tNode.next) {
                     const nextProjectedTNode = tNode.projectionNext;
                     const index = nextProjectedTNode.index - ɵHEADER_OFFSET;
-                    const path = calcPathForNode(tView, lView, nextProjectedTNode);
-                    ngh.nodes[index] = path;
+                    if (!isInNonHydratableBlock(nextProjectedTNode, lView)) {
+                        const path = calcPathForNode(tView, lView, nextProjectedTNode);
+                        ngh.nodes[index] = path;
+                    }
                 }
             }
         }
     }
     return ngh;
-}
-function isConnected(originalNode) {
-    let node = originalNode;
-    while (node != null) {
-        if (node.nodeType === Node.DOCUMENT_NODE) {
-            return true;
-        }
-        node = node.parentNode;
-        if (node != null && node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
-            node = node.host;
-        }
-    }
-    return false;
 }
 function calcPathForNode(tView, lView, tNode, parentTNode) {
     const index = tNode.index;
@@ -1455,7 +1461,7 @@ function renderModuleFactory(moduleFactory, options) {
 /**
  * @publicApi
  */
-const VERSION = new Version('15.1.0-next.2+sha-1939ca0-with-local-changes');
+const VERSION = new Version('15.1.0-next.2+sha-2ebdd25-with-local-changes');
 
 /**
  * @license

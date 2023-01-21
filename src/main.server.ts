@@ -1,2 +1,2 @@
 
-export { KitchenSinkRootServerModule } from './app/app.server-module';
+export { KitchenFaucetRootServerModule } from './app/app.server-module';

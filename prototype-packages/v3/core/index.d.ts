@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.1.0-next.2+sha-1939ca0-with-local-changes
+ * @license Angular v15.1.0-next.2+sha-2ebdd25-with-local-changes
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9676,6 +9676,20 @@ export declare function ɵmakeDecorator<T>(name: string, props?: (...args: any[]
     (...args: any[]): any;
     (...args: any[]): (cls: any) => any;
 };
+
+/**
+ * Helper function to walk up parent nodes using TNode data structure, crossing
+ * view boundaries if needed, calling `predicateFn` at each level (with the current
+ * TNode as an argument). The process stops when predicate return `true` for
+ * the first time. If `predicateFn` never returned `true` after reaching the root
+ * view, the function returns `false`.
+ *
+ * @param tNode
+ * @param lView
+ * @param predicateFn
+ * @returns
+ */
+export declare function ɵnavigateParentTNodes(tNode: ɵTNode, lView: ɵLView, predicateFn: (tNode: ɵTNode) => boolean): ɵTNode | null;
 
 
 export declare const ɵNG_COMP_DEF: string;
