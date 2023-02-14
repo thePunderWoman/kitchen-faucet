@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.2.0-next.2+sha-4fa87f8
+ * @license Angular v15.2.0-next.2+sha-a37b7ea
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15134,10 +15134,12 @@ function locateNextRNode(hydrationInfo, tView, lView, tNode, previousTNode, prev
                     // this means that we are processing a node like `<div #vcrTarget>`, which is
                     // represented in live DOM as `<div></div>...<!--container-->`.
                     // In this case, there are nodes *after* this element and we need to skip those.
+                    const views = previousNodeHydrationInfo[VIEWS];
+                    const numRootNodesToSkip = views ? calcViewContainerSize(views) : 0;
                     // `+1` stands for an anchor comment node after all the views in this container.
-                    const nodesToSkip = calcViewContainerSize(previousNodeHydrationInfo[VIEWS]) + 1;
+                    const nodesToSkip = numRootNodesToSkip + 1;
                     previousRElement = siblingAfter(nodesToSkip, previousRElement);
-                    // TODO: add an assert that `previousRElement` is a comment node.
+                    ngDevMode && assertRComment(previousRElement);
                 }
                 native = previousRElement.nextSibling;
             }
@@ -16701,8 +16703,12 @@ function cleanupLContainer(lContainer) {
         for (const view of lContainer[DEHYDRATED_VIEWS]) {
             // FIXME: this is a temporary check to keep "lazy" components
             // from being removed. This code is **only** needed for testing
-            // purposes and must be removed.
-            if (view.firstChild && !view.firstChild.hasAttribute('lazy')) {
+            // purposes and must be removed. Instead, we should rely on
+            // a flag (like `lazy: true`) that should be included into
+            // the dehydrated view object (added as a part of serialization).
+            const firstChild = view.firstChild;
+            if (firstChild &&
+                (firstChild.nodeType !== Node.ELEMENT_NODE || !firstChild.hasAttribute('lazy'))) {
                 removeDehydratedView(view);
             }
             else {
@@ -16738,8 +16744,9 @@ function removeDehydratedView(dehydratedView) {
     if (currentRNode) {
         const numNodes = dehydratedView[NUM_ROOT_NODES];
         while (nodesRemoved < numNodes) {
+            const nextSibling = currentRNode.nextSibling;
             currentRNode.remove();
-            currentRNode = currentRNode.nextSibling;
+            currentRNode = nextSibling;
             nodesRemoved++;
         }
     }
@@ -16974,7 +16981,7 @@ class Version {
 /**
  * @publicApi
  */
-const VERSION = new Version('15.2.0-next.2+sha-4fa87f8');
+const VERSION = new Version('15.2.0-next.2+sha-a37b7ea');
 
 // This default value is when checking the hierarchy for a token.
 //

@@ -33,7 +33,6 @@ export function app(): express.Express {
 
   // All regular routes use the Universal engine
   server.get('*', (req, res) => {
-    console.log('THIS IS THE SERVER')
     const profiler = new SsrProfiler();
     enableSsrPeformanceProfiler(profiler);
     res.render(

@@ -9,7 +9,7 @@ import {KitchenFaucetModule} from './kitchen-faucet/kitchen-faucet';
   selector: 'kitchen-faucet-root',
   template: `
     <h1>Kitchen faucet app</h1>
-    <!-- <kitchen-faucet></kitchen-faucet> -->
+    <kitchen-faucet></kitchen-faucet>
     <kitchen-faucet-mdc></kitchen-faucet-mdc>
   `,
 })

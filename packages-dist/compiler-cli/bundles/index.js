@@ -68,7 +68,7 @@ import "./chunk-SRFZMXHZ.js";
 
 // bazel-out/darwin_arm64-fastbuild/bin/packages/compiler-cli/src/version.mjs
 import { Version } from "@angular/compiler";
-var VERSION = new Version("15.2.0-next.2+sha-4fa87f8");
+var VERSION = new Version("15.2.0-next.2+sha-a37b7ea");
 
 // bazel-out/darwin_arm64-fastbuild/bin/packages/compiler-cli/src/ngtsc/tsc_plugin.mjs
 var NgTscPlugin = class {
