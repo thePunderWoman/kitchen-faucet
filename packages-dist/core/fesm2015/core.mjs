@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.2.0-next.2+sha-a37b7ea
+ * @license Angular v15.2.0-next.2+sha-8dbcb73
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9331,6 +9331,10 @@ const PLATFORM_ID = new InjectionToken('Platform ID', {
     factory: () => 'unknown', // set a default platform name, when none set explicitly
 });
 /**
+ * TODO: add docs!
+ */
+const TRANSFER_STATE = new InjectionToken('Transfer State');
+/**
  * A [DI token](guide/glossary#di-token "DI token definition") that provides a set of callbacks to
  * be called for every component that is bootstrapped.
  *
@@ -12400,7 +12404,7 @@ function renderComponent(hostLView, componentHostIdx) {
     syncViewWithBlueprint(componentTView, componentView);
     const hostRNode = componentView[HOST];
     if (hostRNode !== null && componentView[HYDRATION_INFO] === null) {
-        componentView[HYDRATION_INFO] = retrieveNghInfo(hostRNode);
+        componentView[HYDRATION_INFO] = retrieveNghInfo(hostRNode, componentView[INJECTOR$1]);
     }
     renderView(componentTView, componentView, componentView[CONTEXT]);
 }
@@ -14752,6 +14756,58 @@ function _mergeArrays(parts) {
     return result;
 }
 
+function collectNativeNodes(tView, lView, tNode, result, isProjection = false) {
+    while (tNode !== null) {
+        ngDevMode &&
+            assertTNodeType(tNode, 3 /* TNodeType.AnyRNode */ | 12 /* TNodeType.AnyContainer */ | 16 /* TNodeType.Projection */ | 32 /* TNodeType.Icu */);
+        const lNode = lView[tNode.index];
+        // A given lNode can represent either a native node or a LContainer (when it is a host of a
+        // ViewContainerRef). When we find a LContainer we need to descend into it to collect root nodes
+        // from the views in this container.
+        if (isLContainer(lNode)) {
+            for (let i = CONTAINER_HEADER_OFFSET; i < lNode.length; i++) {
+                const lViewInAContainer = lNode[i];
+                const lViewFirstChildTNode = lViewInAContainer[TVIEW].firstChild;
+                if (lViewFirstChildTNode !== null) {
+                    collectNativeNodes(lViewInAContainer[TVIEW], lViewInAContainer, lViewFirstChildTNode, result);
+                }
+            }
+        }
+        const tNodeType = tNode.type;
+        if (tNodeType & 8 /* TNodeType.ElementContainer */) {
+            collectNativeNodes(tView, lView, tNode.child, result);
+        }
+        else if (tNodeType & 32 /* TNodeType.Icu */) {
+            const nextRNode = icuContainerIterate(tNode, lView);
+            let rNode;
+            while (rNode = nextRNode()) {
+                result.push(rNode);
+            }
+        }
+        else if (tNodeType & 16 /* TNodeType.Projection */) {
+            const nodesInSlot = getProjectionNodes(lView, tNode);
+            if (Array.isArray(nodesInSlot)) {
+                result.push(...nodesInSlot);
+            }
+            else {
+                const parentView = getLViewParent(lView[DECLARATION_COMPONENT_VIEW]);
+                ngDevMode && assertParentView(parentView);
+                collectNativeNodes(parentView[TVIEW], parentView, nodesInSlot, result, true);
+            }
+        }
+        // FIXME: this code is moved here to calculate the list of root nodes
+        // within a view correctly in case `<ng-container>` is used (which adds)
+        // an anchor node to the very end of the list. This should be fixed
+        // separately, but we just include the change here for now to get hydration
+        // working properly in this prototype.
+        if (lNode !== null) {
+            result.push(unwrapRNode(lNode));
+        }
+        tNode = isProjection ? tNode.projectionNext : tNode.next;
+    }
+    return result;
+}
+
 const NODES = 'n';
 const NUM_ROOT_NODES = 'r';
 const CONTAINERS = 'c';
@@ -14807,106 +14863,6 @@ function isInSkipHydrationBlock(tNode, lView) {
     // - we have a TNode
     // - the tNode is different than the root node
     return foundTNode !== null && foundTNode !== tNode;
-}
-
-/**
- * Checks if a character is within a valid token chars set, which is:
- * * a-z and A-Z
- * * 0-9
- * * `-` char
- */
-function isValidTokenChar(char) {
-    return /[0-9a-zA-Z\-]/.test(char);
-}
-function isDigit$1(char) {
-    return /[0-9]/.test(char);
-}
-function parse(input) {
-    let idx = 0;
-    const peek = () => input[idx];
-    const consume = () => input[idx++];
-    const advance = () => idx++;
-    const consumeToken = () => {
-        let char = '';
-        let onlyDigits = true;
-        while (idx < input.length) {
-            const next = peek();
-            if (isValidTokenChar(next)) {
-                if (!isDigit$1(next)) {
-                    onlyDigits = false;
-                }
-                char += consume();
-            }
-            else
-                break;
-        }
-        // Check if there are only digits in a string, in which case
-        // transform it from a string to a number.
-        return onlyDigits && char !== '' ? parseInt(char) : char;
-    };
-    const consumeValue = () => {
-        switch (peek()) {
-            case '{':
-                advance(); // skip over '{'
-                return consumeObject();
-            case '[':
-                advance(); // skip over '['
-                return consumeArray();
-            default:
-                return consumeToken();
-        }
-    };
-    const consumeObject = () => {
-        const obj = {};
-        while (idx < input.length) {
-            const key = consumeToken();
-            if (key === '') { // empty object?
-                const next = consume();
-                // TODO: make it ngDevMode-only check
-                if (next !== '}') {
-                    throw new Error(`Ngh JSON: invalid state. Expecting '{', but got '${next}' instead.`);
-                }
-                break;
-            }
-            consume(); // ':' char
-            obj[key] = consumeValue();
-            // Read next char, it might be either `,` or `}`.
-            // If it's `}` - exit.
-            if (consume() === '}')
-                break;
-        }
-        return obj;
-    };
-    const consumeArray = () => {
-        const arr = [];
-        while (idx < input.length) {
-            const value = consumeValue();
-            if (value !== '') {
-                arr.push(value);
-            }
-            // Read next char, it might be either `,` or `]`.
-            // If it's `]` - exit.
-            if (consume() === ']')
-                break;
-        }
-        return arr;
-    };
-    return consumeValue();
-}
-/**
- * TODO: add docs, mention that it's *not* a general-purpose
- * utility, it's a custom implementation based on JSON structure
- * used to serialize Ngh data structures, which allows to drop
- * quotes around keys and values.
- */
-class NghJSON {
-    static stringify(input) {
-        // TODO: consider better implementation here.
-        return JSON.stringify(input).replace(/"/g, '');
-    }
-    static parse(input) {
-        return parse(input);
-    }
 }
 
 /**
@@ -14976,26 +14932,6 @@ function decompressNodeLocation(path) {
         }
     }
     return [ref, ...steps];
-}
-/**
- * Compresses NGH data collected for a component and serializes
- * it into a string.
- *
- * @param ngh
- * @returns
- */
-function compressNghInfo(ngh) {
-    return NghJSON.stringify(ngh);
-}
-/**
- * De-serializes NGH info retrieved from the `ngh` attribute.
- * Effectively reverts the `compressNghInfo` operation.
- *
- * @param ngh
- * @returns
- */
-function decompressNghInfo(ngh) {
-    return NghJSON.parse(ngh);
 }
 
 const REFERENCE_NODE_HOST = 'h';
@@ -15116,12 +15052,14 @@ function calcViewContainerSize(views) {
     return numNodes;
 }
 function locateNextRNode(hydrationInfo, tView, lView, tNode, previousTNode, previousTNodeParent) {
-    var _a, _b, _c;
+    var _a;
     let native = null;
     const adjustedIndex = tNode.index - HEADER_OFFSET;
-    if ((_a = hydrationInfo[NODES]) === null || _a === void 0 ? void 0 : _a[adjustedIndex]) {
+    const nodes = hydrationInfo.data[NODES];
+    const containers = hydrationInfo.data[CONTAINERS];
+    if (nodes === null || nodes === void 0 ? void 0 : nodes[adjustedIndex]) {
         // We know exact location of the node.
-        native = locateRNodeByPath(hydrationInfo[NODES][adjustedIndex], lView);
+        native = locateRNodeByPath(nodes[adjustedIndex], lView);
     }
     else if (tView.firstChild === tNode) {
         // We create a first node in this view.
@@ -15129,6 +15067,7 @@ function locateNextRNode(hydrationInfo, tView, lView, tNode, previousTNode, prev
     }
     else {
         ngDevMode && assertDefined(previousTNode, 'Unexpected state: no current TNode found.');
+        const previousTNodeIndex = previousTNode.index - HEADER_OFFSET;
         let previousRElement = getNativeByTNode(previousTNode, lView);
         // TODO: we may want to use this instead?
         // const closest = getClosestRElement(tView, previousTNode, lView);
@@ -15136,12 +15075,12 @@ function locateNextRNode(hydrationInfo, tView, lView, tNode, previousTNode, prev
             // Previous node was an `<ng-container>`, so this node is a first child
             // within an element container, so we can locate the container in ngh data
             // structure and use its first child.
-            const nghContainer = (_b = hydrationInfo[CONTAINERS]) === null || _b === void 0 ? void 0 : _b[previousTNode.index - HEADER_OFFSET];
-            if (ngDevMode && !nghContainer) {
+            const elementContainer = (_a = hydrationInfo.elementContainers) === null || _a === void 0 ? void 0 : _a[previousTNodeIndex];
+            if (ngDevMode && !elementContainer) {
                 // TODO: add better error message.
                 throw new Error('Invalid state.');
             }
-            native = nghContainer.firstChild;
+            native = elementContainer.firstChild;
         }
         else {
             // FIXME: this doesn't work for i18n :(
@@ -15151,7 +15090,7 @@ function locateNextRNode(hydrationInfo, tView, lView, tNode, previousTNode, prev
                 native = previousRElement.firstChild;
             }
             else {
-                const previousNodeHydrationInfo = (_c = hydrationInfo[CONTAINERS]) === null || _c === void 0 ? void 0 : _c[previousTNode.index - HEADER_OFFSET];
+                const previousNodeHydrationInfo = containers === null || containers === void 0 ? void 0 : containers[previousTNodeIndex];
                 if (previousTNode.type === 2 /* TNodeType.Element */ && previousNodeHydrationInfo) {
                     // If the previous node is an element, but it also has container info,
                     // this means that we are processing a node like `<div #vcrTarget>`, which is
@@ -15194,15 +15133,15 @@ function locateDehydratedViewsInContainer(currentRNode, nghContainer) {
             // This pushes the dehydrated views based on the multiplier count to account
             // for the number of instances we should see of a particular view
             for (let i = 0; i < ((_a = nghView[MULTIPLIER]) !== null && _a !== void 0 ? _a : 1); i++) {
-                const view = Object.assign({}, nghView);
-                if (view[NUM_ROOT_NODES] > 0) {
+                const view = { data: nghView };
+                if (nghView[NUM_ROOT_NODES] > 0) {
                     // Keep reference to the first node in this view,
                     // so it can be accessed while invoking template instructions.
                     view.firstChild = currentRNode;
                     // Move over to the first node after this view, which can
                     // either be a first node of the next view or an anchor comment
                     // node after the last view in a container.
-                    currentRNode = siblingAfter(view[NUM_ROOT_NODES], currentRNode);
+                    currentRNode = siblingAfter(nghView[NUM_ROOT_NODES], currentRNode);
                 }
                 dehydratedViews.push(view);
             }
@@ -15225,7 +15164,7 @@ function findMatchingDehydratedViewImpl(lContainer, template) {
         if (dehydratedViews.length > 0) {
             // TODO: take into account an index of a view within ViewContainerRef,
             // otherwise, we may end up reusing wrong nodes from live DOM?
-            const dehydratedViewIndex = dehydratedViews.findIndex(view => view[TEMPLATE] === template);
+            const dehydratedViewIndex = dehydratedViews.findIndex(view => view.data[TEMPLATE] === template);
             if (dehydratedViewIndex > -1) {
                 hydrationInfo = dehydratedViews[dehydratedViewIndex];
                 // Drop this view from the list of de-hydrated ones.
@@ -15240,58 +15179,6 @@ function enableFindMatchingDehydratedViewImpl() {
 }
 function findMatchingDehydratedView(lContainer, template) {
     return _findMatchingDehydratedViewImpl(lContainer, template);
-}
-
-function collectNativeNodes(tView, lView, tNode, result, isProjection = false) {
-    while (tNode !== null) {
-        ngDevMode &&
-            assertTNodeType(tNode, 3 /* TNodeType.AnyRNode */ | 12 /* TNodeType.AnyContainer */ | 16 /* TNodeType.Projection */ | 32 /* TNodeType.Icu */);
-        const lNode = lView[tNode.index];
-        // A given lNode can represent either a native node or a LContainer (when it is a host of a
-        // ViewContainerRef). When we find a LContainer we need to descend into it to collect root nodes
-        // from the views in this container.
-        if (isLContainer(lNode)) {
-            for (let i = CONTAINER_HEADER_OFFSET; i < lNode.length; i++) {
-                const lViewInAContainer = lNode[i];
-                const lViewFirstChildTNode = lViewInAContainer[TVIEW].firstChild;
-                if (lViewFirstChildTNode !== null) {
-                    collectNativeNodes(lViewInAContainer[TVIEW], lViewInAContainer, lViewFirstChildTNode, result);
-                }
-            }
-        }
-        const tNodeType = tNode.type;
-        if (tNodeType & 8 /* TNodeType.ElementContainer */) {
-            collectNativeNodes(tView, lView, tNode.child, result);
-        }
-        else if (tNodeType & 32 /* TNodeType.Icu */) {
-            const nextRNode = icuContainerIterate(tNode, lView);
-            let rNode;
-            while (rNode = nextRNode()) {
-                result.push(rNode);
-            }
-        }
-        else if (tNodeType & 16 /* TNodeType.Projection */) {
-            const nodesInSlot = getProjectionNodes(lView, tNode);
-            if (Array.isArray(nodesInSlot)) {
-                result.push(...nodesInSlot);
-            }
-            else {
-                const parentView = getLViewParent(lView[DECLARATION_COMPONENT_VIEW]);
-                ngDevMode && assertParentView(parentView);
-                collectNativeNodes(parentView[TVIEW], parentView, nodesInSlot, result, true);
-            }
-        }
-        // FIXME: this code is moved here to calculate the list of root nodes
-        // within a view correctly in case `<ng-container>` is used (which adds)
-        // an anchor node to the very end of the list. This should be fixed
-        // separately, but we just include the change here for now to get hydration
-        // working properly in this prototype.
-        if (lNode !== null) {
-            result.push(unwrapRNode(lNode));
-        }
-        tNode = isProjection ? tNode.projectionNext : tNode.next;
-    }
-    return result;
 }
 
 class ViewRef$1 {
@@ -15807,7 +15694,7 @@ const R3ViewContainerRef = class ViewContainerRef extends VE_ViewContainerRef {
             // Pointer to a host DOM element.
             rNode = dehydratedView.firstChild;
             // Read hydration info and pass it over to the component view.
-            hydrationInfo = retrieveNghInfo(rNode);
+            hydrationInfo = retrieveNghInfo(rNode, environmentInjector);
         }
         const componentRef = componentFactory.createImpl(contextInjector, projectableNodes, rNode, environmentInjector, hydrationInfo);
         this.insertImpl(componentRef.hostView, index, !!hydrationInfo);
@@ -15963,14 +15850,14 @@ let _locateOrCreateContainerRefImpl = (hostLView, hostTNode, slotValue) => {
     return createLContainer(slotValue, hostLView, commentNode, hostTNode);
 };
 function locateOrCreateContainerRefImpl(hostLView, hostTNode, slotValue) {
+    var _a;
     let nghContainer;
     let dehydratedViews = [];
     const ngh = hostLView[HYDRATION_INFO];
-    const isCreating = !ngh || isInSkipHydrationBlock(hostTNode, hostLView) ||
-        isNodeDisconnected(ngh, hostTNode.index - HEADER_OFFSET);
+    const index = hostTNode.index - HEADER_OFFSET;
+    const isCreating = !ngh || isInSkipHydrationBlock(hostTNode, hostLView) || isNodeDisconnected(ngh, index);
     if (!isCreating) {
-        const index = hostTNode.index - HEADER_OFFSET;
-        nghContainer = ngh[CONTAINERS][index];
+        nghContainer = ngh.data[CONTAINERS][index];
         ngDevMode &&
             assertDefined(nghContainer, 'There is no hydration info available for this container');
     }
@@ -15981,12 +15868,15 @@ function locateOrCreateContainerRefImpl(hostLView, hostTNode, slotValue) {
     // it again.
     if (hostTNode.type & 8 /* TNodeType.ElementContainer */) {
         commentNode = unwrapRNode(slotValue);
-        if (!isCreating && nghContainer && Array.isArray(nghContainer.dehydratedViews)) {
-            // When we create an LContainer based on `<ng-container>`, the container
-            // is already processed, including dehydrated views info. Reuse this info
-            // and erase it in the ngh data to avoid memory leaks.
-            dehydratedViews = nghContainer.dehydratedViews;
-            nghContainer.dehydratedViews = [];
+        if (!isCreating) {
+            const elementContainer = (_a = ngh.elementContainers) === null || _a === void 0 ? void 0 : _a[index];
+            if (elementContainer && Array.isArray(elementContainer.dehydratedViews)) {
+                // When we create an LContainer based on `<ng-container>`, the container
+                // is already processed, including dehydrated views info. Reuse this info
+                // and erase it in the ngh data to avoid memory leaks.
+                dehydratedViews = elementContainer.dehydratedViews;
+                elementContainer.dehydratedViews = [];
+            }
         }
     }
     else {
@@ -16512,7 +16402,7 @@ let _locateOrCreateElementContainerNode = (tView, lView, tNode, adjustedIndex, p
     return [true, comment];
 };
 function locateOrCreateElementContainerNode(tView, lView, tNode, adjustedIndex, previousTNode, previousTNodeParent) {
-    var _a;
+    var _a, _b;
     let comment;
     const index = adjustedIndex - HEADER_OFFSET;
     const ngh = lView[HYDRATION_INFO];
@@ -16522,7 +16412,8 @@ function locateOrCreateElementContainerNode(tView, lView, tNode, adjustedIndex, 
         comment = lView[RENDERER].createComment(ngDevMode ? 'ng-container' : '');
     }
     else {
-        const nghContainer = (_a = ngh[CONTAINERS]) === null || _a === void 0 ? void 0 : _a[index];
+        const nghContainer = (_a = ngh.data[CONTAINERS]) === null || _a === void 0 ? void 0 : _a[index];
+        (_b = ngh.elementContainers) !== null && _b !== void 0 ? _b : (ngh.elementContainers = {});
         ngDevMode &&
             assertDefined(nghContainer, 'There is no hydration info available for this element container');
         const currentRNode = locateNextRNode(ngh, tView, lView, tNode, previousTNode, previousTNodeParent);
@@ -16530,12 +16421,12 @@ function locateOrCreateElementContainerNode(tView, lView, tNode, adjustedIndex, 
             // This <ng-container> is also annotated as a view container.
             // Extract all dehydrated views following instructions from ngh
             // and store this info for later reuse in `createContainerRef`.
-            const [anchorRNode, views] = locateDehydratedViewsInContainer(currentRNode, nghContainer);
+            const [anchorRNode, dehydratedViews] = locateDehydratedViewsInContainer(currentRNode, nghContainer);
             comment = anchorRNode;
-            if (views.length > 0) {
+            if (dehydratedViews.length > 0) {
                 // Store dehydrated views info in ngh data structure for later reuse
                 // while creating a ViewContainerRef instance, see `createContainerRef`.
-                nghContainer.dehydratedViews = views;
+                ngh.elementContainers[index] = { dehydratedViews };
             }
         }
         else {
@@ -16544,7 +16435,7 @@ function locateOrCreateElementContainerNode(tView, lView, tNode, adjustedIndex, 
             //
             // Store a reference to the first node in a container,
             // so it can be referenced while invoking further instructions.
-            nghContainer.firstChild = currentRNode;
+            ngh.elementContainers[index] = { firstChild: currentRNode };
             comment = siblingAfter(nghContainer[NUM_ROOT_NODES], currentRNode);
         }
         ngDevMode &&
@@ -16564,7 +16455,7 @@ function templateFirstCreatePass(index, tView, lView, templateFn, decls, vars, t
     const tViewConsts = tView.consts;
     const adjustedIndex = index + HEADER_OFFSET;
     const ngh = lView[HYDRATION_INFO];
-    let ssrId = (ngh && ((_a = ngh[TEMPLATES]) === null || _a === void 0 ? void 0 : _a[index])) || null;
+    let ssrId = (ngh && ((_a = ngh.data[TEMPLATES]) === null || _a === void 0 ? void 0 : _a[index])) || null;
     // TODO(pk): refactor getOrCreateTNode to have the "create" only version
     const tNode = getOrCreateTNode(tView, adjustedIndex, 4 /* TNodeType.Container */, tagName || null, getConstant(tViewConsts, attrsIndex), ssrId);
     resolveDirectives(tView, lView, tNode, getConstant(tViewConsts, localRefsIndex));
@@ -16634,7 +16525,7 @@ function locateOrCreateLContainerNodeImpl(tView, lView, tNode, adjustedIndex, pr
     }
     else {
         let currentRNode = locateNextRNode(ngh, tView, lView, tNode, previousTNode, previousTNodeParent);
-        const nghContainer = (_a = ngh[CONTAINERS]) === null || _a === void 0 ? void 0 : _a[index];
+        const nghContainer = (_a = ngh.data[CONTAINERS]) === null || _a === void 0 ? void 0 : _a[index];
         ngDevMode &&
             assertDefined(nghContainer, 'There is no hydration info available for this template');
         const [anchorRNode, views] = locateDehydratedViewsInContainer(currentRNode, nghContainer);
@@ -16769,7 +16660,7 @@ function removeDehydratedView(dehydratedView) {
     let nodesRemoved = 0;
     let currentRNode = dehydratedView.firstChild;
     if (currentRNode) {
-        const numNodes = dehydratedView[NUM_ROOT_NODES];
+        const numNodes = dehydratedView.data[NUM_ROOT_NODES];
         while (nodesRemoved < numNodes) {
             const nextSibling = currentRNode.nextSibling;
             currentRNode.remove();
@@ -16785,6 +16676,7 @@ const NG_DEV_MODE$1 = typeof ngDevMode === 'undefined' || !!ngDevMode;
  */
 const IS_HYDRATION_FEATURE_ENABLED = new InjectionToken(NG_DEV_MODE$1 ? 'IS_HYDRATION_FEATURE_ENABLED' : '');
 let isHydrationSupportEnabled = false;
+const TRANSFER_STATE_TOKEN_ID = '__ɵnghData__';
 // TODO: update this implementation to allow a "rollback".
 // This would be needed for tests, so that we reset the logic
 // back before we SSR the next component.
@@ -16806,13 +16698,10 @@ function isBrowser() {
     return platformId === 'browser';
 }
 /**
- * TODO: add docs
- *
- * @publicApi
- * @developerPreview
+ * TODO: refactor and/or rename this function!
  */
-function provideHydrationSupport() {
-    return makeEnvironmentProviders([
+function internalProvideHydrationSupport() {
+    return [
         {
             provide: ENVIRONMENT_INITIALIZER,
             useValue: () => {
@@ -16837,7 +16726,397 @@ function provideHydrationSupport() {
             provide: IS_HYDRATION_FEATURE_ENABLED,
             useValue: true,
         }
-    ]);
+    ];
+}
+
+/**
+ * Registry that keeps track of unique TView ids throughout
+ * the serialization process. This is needed to identify
+ * dehydrated views at runtime properly (pick up dehydrated
+ * views created based on a certain TView).
+ */
+class TViewSsrIdRegistry {
+    constructor() {
+        this.registry = new WeakMap();
+        this.currentId = 0;
+    }
+    get(tView) {
+        if (!this.registry.has(tView)) {
+            this.registry.set(tView, `t${this.currentId++}`);
+        }
+        return this.registry.get(tView);
+    }
+}
+/**
+ * Keeps track of all produced `ngh` annotations and avoids
+ * duplication. If the same annotation is being added, the collection
+ * remains the same and an index of that annotation is returned instead.
+ * This helps minimize the amount of annotations needed on a page.
+ */
+class NghAnnotationCollection {
+    constructor() {
+        this.data = [];
+        this.indexByContent = new Map();
+    }
+    add(ngh) {
+        const nghAsString = JSON.stringify(ngh);
+        if (!this.indexByContent.has(nghAsString)) {
+            const index = this.data.length;
+            this.data.push(ngh);
+            this.indexByContent.set(nghAsString, index);
+            return index;
+        }
+        return this.indexByContent.get(nghAsString);
+    }
+    getAllAnnotations() {
+        return this.data;
+    }
+}
+function makeStateKey(key) {
+    return key;
+}
+/**
+ * Annotates all components bootstrapped in a given ApplicationRef
+ * with info needed for hydration.
+ *
+ * @param appRef A current instance of an ApplicationRef.
+ * @param doc A reference to the current Document instance.
+ */
+function annotateForHydration(appRef, doc, transferState, profiler) {
+    const ssrIdRegistry = new TViewSsrIdRegistry();
+    const corruptedTextNodes = new Map();
+    const annotationCollection = new NghAnnotationCollection();
+    const viewRefs = retrieveViewsFromApplicationRef(appRef);
+    for (const viewRef of viewRefs) {
+        const lView = getComponentLView(viewRef);
+        // TODO: make sure that this lView represents
+        // a component instance.
+        const hostElement = lView[HOST];
+        if (hostElement) {
+            const context = {
+                ssrIdRegistry,
+                corruptedTextNodes,
+                profiler,
+                annotationCollection,
+            };
+            annotateHostElementForHydration(hostElement, lView, context);
+            insertTextNodeMarkers(corruptedTextNodes, doc);
+            profiler === null || profiler === void 0 ? void 0 : profiler.incrementMetricValue("Empty Text Node count" /* SsrPerfMetrics.EmptyTextNodeCount */, corruptedTextNodes.size);
+        }
+    }
+    const allAnnotations = annotationCollection.getAllAnnotations();
+    if (allAnnotations.length > 0) {
+        transferState.set(NGH_DATA_KEY, allAnnotations);
+    }
+}
+function isTI18nNode(obj) {
+    // TODO: consider adding a node type to TI18n?
+    return obj.hasOwnProperty('create') && obj.hasOwnProperty('update');
+}
+function serializeLView(lView, context) {
+    var _a, _b, _c, _d, _e, _f, _g, _h;
+    const ngh = {};
+    const tView = lView[TVIEW];
+    for (let i = HEADER_OFFSET; i < tView.bindingStartIndex; i++) {
+        let targetNode = null;
+        const adjustedIndex = i - HEADER_OFFSET;
+        const tNode = tView.data[i];
+        // tNode may be null in the case of a localRef
+        if (!tNode) {
+            continue;
+        }
+        if (context.profiler) {
+            // We process 1 more node from LView here. If we process a component
+            // or an LContainer, we can still increase the value by one, since both
+            // of them have native nodes (e.g. `lContainer[HOST]`).
+            context.profiler.incrementMetricValue("Serialized DOM Nodes" /* SsrPerfMetrics.SerializedDomNodes */, 1);
+        }
+        if (Array.isArray(tNode.projection)) {
+            // TODO: handle `RNode[]` as well.
+            for (const headTNode of tNode.projection) {
+                // We may have `null`s in slots with no projected content.
+                // Also, if we process re-projected content (i.e. `<ng-content>`
+                // appears at projection location), skip annotations for this content
+                // since all DOM nodes in this projection were handled while processing
+                // a parent lView, which contains those nodes.
+                if (headTNode && !isProjectionTNode(headTNode)) {
+                    if (!isInSkipHydrationBlock(headTNode, lView)) {
+                        (_a = ngh[NODES]) !== null && _a !== void 0 ? _a : (ngh[NODES] = {});
+                        ngh[NODES][headTNode.index - HEADER_OFFSET] = calcPathForNode(lView, headTNode);
+                    }
+                }
+            }
+        }
+        if (isLContainer(lView[i])) {
+            // this is a container
+            const tNode = tView.data[i];
+            const embeddedTView = tNode.tViews;
+            if (embeddedTView !== null) {
+                if (Array.isArray(embeddedTView)) {
+                    throw new Error(`Expecting tNode.tViews to be an object, but it's an array.`);
+                }
+                (_b = ngh[TEMPLATES]) !== null && _b !== void 0 ? _b : (ngh[TEMPLATES] = {});
+                ngh[TEMPLATES][i - HEADER_OFFSET] = context.ssrIdRegistry.get(embeddedTView);
+            }
+            const hostNode = lView[i][HOST];
+            // LView[i][HOST] can be 2 different types:
+            // - either a DOM Node
+            // - or an LView Array that represents a component
+            // We only handle the DOM Node case here
+            if (Array.isArray(hostNode)) {
+                // this is a component
+                // Check to see if it has ngSkipHydration
+                // TODO: should we check `SKIP_HYDRATION_ATTR_NAME` in tNode.mergedAttrs?
+                targetNode = unwrapRNode(hostNode);
+                if (!targetNode.hasAttribute(SKIP_HYDRATION_ATTR_NAME)) {
+                    annotateHostElementForHydration(targetNode, hostNode, context);
+                }
+            }
+            const container = serializeLContainer(lView[i], context);
+            (_c = ngh[CONTAINERS]) !== null && _c !== void 0 ? _c : (ngh[CONTAINERS] = {});
+            ngh[CONTAINERS][adjustedIndex] = container;
+        }
+        else if (Array.isArray(lView[i])) {
+            // This is a component
+            // Check to see if it has ngSkipHydration
+            // TODO: should we check `SKIP_HYDRATION_ATTR_NAME` in tNode.mergedAttrs?
+            targetNode = unwrapRNode(lView[i][HOST]);
+            if (!targetNode.hasAttribute(SKIP_HYDRATION_ATTR_NAME)) {
+                annotateHostElementForHydration(targetNode, lView[i], context);
+            }
+        }
+        else if (isTI18nNode(tNode) || tNode.insertBeforeIndex) {
+            // TODO: implement hydration for i18n nodes
+            throw new Error('Hydration for i18n nodes is not implemented.');
+        }
+        else {
+            const tNodeType = tNode.type;
+            // <ng-container> case
+            if (tNodeType & 8 /* TNodeType.ElementContainer */) {
+                const rootNodes = [];
+                collectNativeNodes(tView, lView, tNode.child, rootNodes);
+                // This is an "element" container (vs "view" container),
+                // so it's only represented by the number of top-level nodes
+                // as a shift to get to a corresponding comment node.
+                const container = {
+                    [NUM_ROOT_NODES]: rootNodes.length,
+                };
+                (_d = ngh[CONTAINERS]) !== null && _d !== void 0 ? _d : (ngh[CONTAINERS] = {});
+                ngh[CONTAINERS][adjustedIndex] = container;
+            }
+            else if (tNodeType & 16 /* TNodeType.Projection */) {
+                // Current TNode has no DOM element associated with it,
+                // so the following node would not be able to find an anchor.
+                // Use full path instead.
+                let nextTNode = tNode.next;
+                while (nextTNode !== null && (nextTNode.type & 16 /* TNodeType.Projection */)) {
+                    nextTNode = nextTNode.next;
+                }
+                if (nextTNode) {
+                    const index = nextTNode.index - HEADER_OFFSET;
+                    if (!isInSkipHydrationBlock(nextTNode, lView)) {
+                        const path = calcPathForNode(lView, nextTNode);
+                        (_e = ngh[NODES]) !== null && _e !== void 0 ? _e : (ngh[NODES] = {});
+                        ngh[NODES][index] = path;
+                    }
+                }
+            }
+            else {
+                if (isDroppedProjectedNode(tNode)) {
+                    // This is a case where a node used in content projection
+                    // doesn't make it into one of the content projection slots
+                    // (for example, when there is no default <ng-content /> slot
+                    // in projector component's template).
+                    (_f = ngh[NODES]) !== null && _f !== void 0 ? _f : (ngh[NODES] = {});
+                    ngh[NODES][adjustedIndex] = DROPPED_PROJECTED_NODE;
+                }
+                else {
+                    // Handle cases where text nodes can be lost after DOM serialization:
+                    //  1. When there is an *empty text node* in DOM: in this case, this
+                    //     node would not make it into the serialized string and as s result,
+                    //     this node wouldn't be created in a browser. This would result in
+                    //     a mismatch during the hydration, where the runtime logic would expect
+                    //     a text node to be present in live DOM, but no text node would exist.
+                    //     Example: `<span>{{ name }}</span>` when the `name` is an empty string.
+                    //     This would result in `<span></span>` string after serialization and
+                    //     in a browser only the `span` element would be created. To resolve that,
+                    //     an extra comment node is appended in place of an empty text node and
+                    //     that special comment node is replaced with an empty text node *before*
+                    //     hydration.
+                    //  2. When there are 2 consecutive text nodes present in the DOM.
+                    //     Example: `<div>Hello <ng-container *ngIf="true">world</ng-container></div>`.
+                    //     In this scenario, the live DOM would look like this:
+                    //       <div>#text('Hello ') #text('world') #comment('container')</div>
+                    //     Serialized string would look like this: `<div>Hello world<!--container--></div>`.
+                    //     The live DOM in a browser after that would be:
+                    //       <div>#text('Hello world') #comment('container')</div>
+                    //     Notice how 2 text nodes are now "merged" into one. This would cause hydration
+                    //     logic to fail, since it'd expect 2 text nodes being present, not one.
+                    //     To fix this, we insert a special comment node in between those text nodes, so
+                    //     serialized representation is: `<div>Hello <!--ngtns-->world<!--container--></div>`.
+                    //     This forces browser to create 2 text nodes separated by a comment node.
+                    //     Before running a hydration process, this special comment node is removed, so the
+                    //     live DOM has exactly the same state as it was before serialization.
+                    if (tNodeType & 1 /* TNodeType.Text */) {
+                        const rNode = unwrapRNode(lView[i]);
+                        if (rNode.textContent === '') {
+                            context.corruptedTextNodes.set(EMPTY_TEXT_NODE_COMMENT, rNode);
+                        }
+                        else if (((_g = rNode.nextSibling) === null || _g === void 0 ? void 0 : _g.nodeType) === Node.TEXT_NODE) {
+                            context.corruptedTextNodes.set(TEXT_NODE_SEPARATOR_COMMENT, rNode);
+                        }
+                    }
+                    if (tNode.projectionNext && tNode.projectionNext !== tNode.next) {
+                        // Check if projection next is not the same as next, in which case
+                        // the node would not be found at creation time at runtime and we
+                        // need to provide a location to that node.
+                        const nextProjectedTNode = tNode.projectionNext;
+                        const index = nextProjectedTNode.index - HEADER_OFFSET;
+                        if (!isInSkipHydrationBlock(nextProjectedTNode, lView)) {
+                            const path = calcPathForNode(lView, nextProjectedTNode);
+                            (_h = ngh[NODES]) !== null && _h !== void 0 ? _h : (ngh[NODES] = {});
+                            ngh[NODES][index] = path;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return ngh;
+}
+function isRootLevelProjectionNode(tNode) {
+    return (tNode.flags & 2 /* TNodeFlags.isProjected */) === 2 /* TNodeFlags.isProjected */;
+}
+/**
+ * Detect a case where a node used in content projection,
+ * but doesn't make it into one of the content projection slots
+ * (for example, when there is no default <ng-content /> slot
+ * in projector component's template).
+ */
+function isDroppedProjectedNode(tNode) {
+    let currentTNode = tNode;
+    let seenComponentHost = false;
+    while (currentTNode !== null) {
+        if (isComponentHost(currentTNode)) {
+            seenComponentHost = true;
+            break;
+        }
+        // If we come across a root projected node, return true.
+        if (isRootLevelProjectionNode(currentTNode)) {
+            return false;
+        }
+        currentTNode = currentTNode.parent;
+    }
+    // If we've seen a component host, but there was no root level
+    // projection node, this indicates that this not was not projected.
+    return seenComponentHost;
+}
+function calcPathForNode(lView, tNode, parentTNode) {
+    const index = tNode.index;
+    // If `null` is passed explicitly, use this as a signal that we want to calculate
+    // the path starting from `lView[HOST]`.
+    parentTNode = parentTNode === null ? null : (parentTNode || tNode.parent);
+    const parentIndex = parentTNode === null ? REFERENCE_NODE_HOST : parentTNode.index;
+    const parentRNode = parentTNode === null ? lView[HOST] : unwrapRNode(lView[parentIndex]);
+    let rNode = unwrapRNode(lView[index]);
+    if (tNode.type & 12 /* TNodeType.AnyContainer */) {
+        // For <ng-container> nodes, instead of serializing a reference
+        // to the anchor comment node, serialize a location of the first
+        // DOM element. Paired with the container size (serialized as a part
+        // of `ngh.containers`), it should give enough information for runtime
+        // to hydrate nodes in this container.
+        const firstRNode = getFirstNativeNode(lView, tNode);
+        // If container is not empty, use a reference to the first element,
+        // otherwise, rNode would point to an anchor comment node.
+        if (firstRNode) {
+            rNode = firstRNode;
+        }
+    }
+    const referenceNode = parentIndex === REFERENCE_NODE_HOST ? parentIndex : '' + (parentIndex - HEADER_OFFSET);
+    let path = calcPathBetween(parentRNode, rNode, referenceNode);
+    if (path === null && parentRNode !== rNode) {
+        // Searching for a path between elements within a host node failed.
+        // Trying to find a path to an element starting from the `document.body` instead.
+        const body = parentRNode.ownerDocument.body;
+        path = calcPathBetween(body, rNode, REFERENCE_NODE_BODY);
+        if (path === null) {
+            // If path is still empty, it's likely that this node is detached and
+            // won't be found during hydration.
+            // TODO: add a better error message, potentially suggesting `ngSkipHydration`.
+            throw new Error('Unable to locate element on a page.');
+        }
+    }
+    return path;
+}
+function serializeLContainer(lContainer, context) {
+    var _a, _b;
+    const container = {};
+    for (let i = CONTAINER_HEADER_OFFSET; i < lContainer.length; i++) {
+        let childLView = lContainer[i];
+        // Get LView for underlying component.
+        if (isRootView(childLView)) {
+            childLView = childLView[HEADER_OFFSET];
+        }
+        const childTView = childLView[TVIEW];
+        let template;
+        let numRootNodes = 0;
+        if (childTView.type === 1 /* TViewType.Component */) {
+            const ctx = childLView[CONTEXT];
+            const componentDef = getComponentDef(ctx.constructor);
+            template = getComponentId(componentDef);
+            // This is a component view, which has only 1 root node: the component
+            // host node itself (other nodes would be inside that host node).
+            numRootNodes = 1;
+        }
+        else {
+            template =
+                context.ssrIdRegistry.get(childTView); // from which template did this lView originate?
+            // Collect root nodes within this view.
+            const rootNodes = [];
+            collectNativeNodes(childTView, childLView, childTView.firstChild, rootNodes);
+            numRootNodes = rootNodes.length;
+        }
+        const view = Object.assign({ [TEMPLATE]: template, [NUM_ROOT_NODES]: numRootNodes }, serializeLView(lContainer[i], context));
+        (_a = container[VIEWS]) !== null && _a !== void 0 ? _a : (container[VIEWS] = []);
+        if (container[VIEWS].length > 0) {
+            const prevView = container[VIEWS].at(-1); // the last element in array
+            // Compare `view` and `prevView` to see if they are the same.
+            if (compareNghView(view, prevView)) {
+                (_b = prevView[MULTIPLIER]) !== null && _b !== void 0 ? _b : (prevView[MULTIPLIER] = 1);
+                prevView[MULTIPLIER]++;
+            }
+            else {
+                container[VIEWS].push(view);
+            }
+        }
+        else {
+            container[VIEWS].push(view);
+        }
+    }
+    return container;
+}
+function compareNghView(curr, prev) {
+    const prevClone = Object.assign({}, prev);
+    delete prevClone[MULTIPLIER];
+    return JSON.stringify(curr) === JSON.stringify(prevClone);
+}
+const NGH_DATA_KEY = makeStateKey(TRANSFER_STATE_TOKEN_ID);
+function annotateHostElementForHydration(element, lView, context) {
+    const ngh = serializeLView(lView, context);
+    const index = context.annotationCollection.add(ngh);
+    if (context.profiler) {
+        if (Object.keys(ngh).length === 0) {
+            context.profiler.incrementMetricValue("Components with empty NGH" /* SsrPerfMetrics.ComponentsWithEmptyNgh */, 1);
+        }
+        context.profiler.incrementMetricValue("Hydration annotation size (in character length)" /* SsrPerfMetrics.NghAnnotationSize */, index.toString().length + 7); // 7 to account for ' ngh=""'
+        context.profiler.incrementMetricValue("Serialized Components" /* SsrPerfMetrics.SerializedComponents */, 1); // increment by one more component
+    }
+    element.setAttribute(NGH_ATTR_NAME, index.toString());
+}
+function insertTextNodeMarkers(corruptedTextNodes, doc) {
+    for (let [marker, textNode] of corruptedTextNodes) {
+        textNode.after(doc.createComment(marker));
+    }
 }
 
 const NGH_ATTR_NAME = 'ngh';
@@ -16848,27 +17127,34 @@ const TEXT_NODE_SEPARATOR_COMMENT = 'ngtns';
  * a given RNode. Returns `null` by default, when hydration is not enabled.
  * @param rNode
  */
-let _retrieveNghInfoImpl = (rNode) => null;
-function retrieveNghInfoImpl(rNode) {
-    let nghInfo = null;
+let _retrieveNghInfoImpl = (rNode, injector) => null;
+function retrieveNghInfoImpl(rNode, injector) {
+    var _a;
     const nghAttrValue = rNode.getAttribute(NGH_ATTR_NAME);
-    if (nghAttrValue != null) {
-        nghInfo = nghAttrValue !== '' ? decompressNghInfo(nghAttrValue) : {};
-        nghInfo.firstChild = rNode.firstChild;
-        rNode.removeAttribute(NGH_ATTR_NAME);
-        // Note: don't check whether this node was claimed for hydration,
-        // because this node might've been previously claimed while processing
-        // template instructions.
-        ngDevMode && markRNodeAsClaimedForHydration(rNode, /* checkIfAlreadyClaimed */ false);
-        ngDevMode && ngDevMode.hydratedComponents++;
+    const transferState = injector.get(TRANSFER_STATE, null, { optional: true });
+    if (transferState !== null) {
+        const nghData = (_a = transferState.get(NGH_DATA_KEY, [])) !== null && _a !== void 0 ? _a : [];
+        if (nghAttrValue != null) {
+            const nghDomInstance = {
+                data: nghAttrValue !== '' ? nghData[Number(nghAttrValue)] : {},
+                firstChild: rNode.firstChild,
+            };
+            rNode.removeAttribute(NGH_ATTR_NAME);
+            // Note: don't check whether this node was claimed for hydration,
+            // because this node might've been previously claimed while processing
+            // template instructions.
+            ngDevMode && markRNodeAsClaimedForHydration(rNode, /* checkIfAlreadyClaimed */ false);
+            ngDevMode && ngDevMode.hydratedComponents++;
+            return nghDomInstance;
+        }
     }
-    return nghInfo;
+    return null;
 }
 function enableRetrieveNghInfoImpl() {
     _retrieveNghInfoImpl = retrieveNghInfoImpl;
 }
-function retrieveNghInfo(rNode) {
-    return _retrieveNghInfoImpl(rNode);
+function retrieveNghInfo(rNode, injector) {
+    return _retrieveNghInfoImpl(rNode, injector);
 }
 function getComponentLView(viewRef) {
     let lView = viewRef._lView;
@@ -16937,7 +17223,7 @@ const DROPPED_PROJECTED_NODE = 'd';
  */
 function isNodeDisconnected(hydrationInfo, index) {
     var _a;
-    return ((_a = hydrationInfo[NODES]) === null || _a === void 0 ? void 0 : _a[index]) === DROPPED_PROJECTED_NODE;
+    return ((_a = hydrationInfo.data[NODES]) === null || _a === void 0 ? void 0 : _a[index]) === DROPPED_PROJECTED_NODE;
 }
 
 /**
@@ -17009,7 +17295,7 @@ class Version {
 /**
  * @publicApi
  */
-const VERSION = new Version('15.2.0-next.2+sha-a37b7ea');
+const VERSION = new Version('15.2.0-next.2+sha-8dbcb73');
 
 // This default value is when checking the hierarchy for a token.
 //
@@ -17273,7 +17559,7 @@ function createRootComponentView(tNode, rNode, rootComponentDef, rootDirectives,
     const viewRenderer = rendererFactory.createRenderer(rNode, rootComponentDef);
     const componentView = createLView(rootView, getOrCreateComponentTView(rootComponentDef), null, rootComponentDef.onPush ? 32 /* LViewFlags.Dirty */ : 16 /* LViewFlags.CheckAlways */, rootView[tNode.index], tNode, rendererFactory, viewRenderer, sanitizer || null, null, null, hydrationInfo);
     if (rNode !== null && componentView[HYDRATION_INFO] === null) {
-        componentView[HYDRATION_INFO] = retrieveNghInfo(rNode);
+        componentView[HYDRATION_INFO] = retrieveNghInfo(rNode, componentView[INJECTOR$1]);
     }
     if (tView.firstCreatePass) {
         markAsComponentHost(tView, tNode, rootDirectives.length - 1);
@@ -22270,27 +22556,11 @@ function applyCreateOpCodes(lView, createOpCodes, parentRNode, insertInFrontOf) 
         let appendNow = (opCode & I18nCreateOpCode.APPEND_EAGERLY) === I18nCreateOpCode.APPEND_EAGERLY;
         const index = opCode >>> I18nCreateOpCode.SHIFT;
         let rNode = lView[index];
-        const ngh = lView[HYDRATION_INFO];
         if (rNode === null) {
             let native;
-            if (ngh) {
-                // debugger;
-                const tView = lView[TVIEW];
-                const tNode = tView.data[index];
-                native = locateNextRNode(ngh, tView, lView, tNode, null, false);
-                appendNow = false;
-                // ngDevMode &&
-                //     assertRElement(
-                //         native, name,
-                //                `Expecting an element node with ${name} tag name in the elementStart
-                //                instruction`);
-                ngDevMode && markRNodeAsClaimedForHydration(native);
-            }
-            else {
-                // We only create new DOM nodes if they don't already exist: If ICU switches case back to a
-                // case which was already instantiated, no need to create new DOM nodes.
-                native = isComment ? renderer.createComment(text) : createTextNode(renderer, text);
-            }
+            // We only create new DOM nodes if they don't already exist: If ICU switches case back to a
+            // case which was already instantiated, no need to create new DOM nodes.
+            native = isComment ? renderer.createComment(text) : createTextNode(renderer, text);
             rNode = lView[index] = native;
         }
         if (appendNow && parentRNode !== null) {
@@ -28639,361 +28909,6 @@ function coerceToBoolean(value) {
 const ɵivyEnabled = true;
 
 /**
- * Registry that keeps track of unique TView ids throughout
- * the serialization process. This is needed to identify
- * dehydrated views at runtime properly (pick up dehydrated
- * views created based on a certain TView).
- */
-class TViewSsrIdRegistry {
-    constructor() {
-        this.registry = new WeakMap();
-        this.currentId = 0;
-    }
-    get(tView) {
-        if (!this.registry.has(tView)) {
-            this.registry.set(tView, `t${this.currentId++}`);
-        }
-        return this.registry.get(tView);
-    }
-}
-/**
- * Annotates all components bootstrapped in a given ApplicationRef
- * with info needed for hydration.
- *
- * @param appRef A current instance of an ApplicationRef.
- * @param doc A reference to the current Document instance.
- */
-function annotateForHydration(appRef, doc, profiler) {
-    const ssrIdRegistry = new TViewSsrIdRegistry();
-    const corruptedTextNodes = new Map();
-    const viewRefs = retrieveViewsFromApplicationRef(appRef);
-    for (const viewRef of viewRefs) {
-        const lView = getComponentLView(viewRef);
-        // TODO: make sure that this lView represents
-        // a component instance.
-        const hostElement = lView[HOST];
-        if (hostElement) {
-            const context = { ssrIdRegistry, corruptedTextNodes, profiler };
-            annotateHostElementForHydration(hostElement, lView, context);
-            insertTextNodeMarkers(corruptedTextNodes, doc);
-            profiler === null || profiler === void 0 ? void 0 : profiler.incrementMetricValue("Empty Text Node count" /* SsrPerfMetrics.EmptyTextNodeCount */, corruptedTextNodes.size);
-        }
-    }
-}
-function isTI18nNode(obj) {
-    // TODO: consider adding a node type to TI18n?
-    return obj.hasOwnProperty('create') && obj.hasOwnProperty('update');
-}
-function serializeLView(lView, context) {
-    var _a, _b, _c, _d, _e, _f, _g, _h;
-    const ngh = {};
-    const tView = lView[TVIEW];
-    for (let i = HEADER_OFFSET; i < tView.bindingStartIndex; i++) {
-        let targetNode = null;
-        const adjustedIndex = i - HEADER_OFFSET;
-        const tNode = tView.data[i];
-        // tNode may be null in the case of a localRef
-        if (!tNode) {
-            continue;
-        }
-        if (context.profiler) {
-            // We process 1 more node from LView here. If we process a component
-            // or an LContainer, we can still increase the value by one, since both
-            // of them have native nodes (e.g. `lContainer[HOST]`).
-            context.profiler.incrementMetricValue("Serialized DOM Nodes" /* SsrPerfMetrics.SerializedDomNodes */, 1);
-        }
-        if (Array.isArray(tNode.projection)) {
-            // TODO: handle `RNode[]` as well.
-            for (const headTNode of tNode.projection) {
-                // We may have `null`s in slots with no projected content.
-                // Also, if we process re-projected content (i.e. `<ng-content>`
-                // appears at projection location), skip annotations for this content
-                // since all DOM nodes in this projection were handled while processing
-                // a parent lView, which contains those nodes.
-                if (headTNode && !isProjectionTNode(headTNode)) {
-                    if (!isInSkipHydrationBlock(headTNode, lView)) {
-                        (_a = ngh[NODES]) !== null && _a !== void 0 ? _a : (ngh[NODES] = {});
-                        ngh[NODES][headTNode.index - HEADER_OFFSET] = calcPathForNode(lView, headTNode);
-                    }
-                }
-            }
-        }
-        if (isLContainer(lView[i])) {
-            // this is a container
-            const tNode = tView.data[i];
-            const embeddedTView = tNode.tViews;
-            if (embeddedTView !== null) {
-                if (Array.isArray(embeddedTView)) {
-                    throw new Error(`Expecting tNode.tViews to be an object, but it's an array.`);
-                }
-                (_b = ngh[TEMPLATES]) !== null && _b !== void 0 ? _b : (ngh[TEMPLATES] = {});
-                ngh[TEMPLATES][i - HEADER_OFFSET] = context.ssrIdRegistry.get(embeddedTView);
-            }
-            const hostNode = lView[i][HOST];
-            // LView[i][HOST] can be 2 different types:
-            // - either a DOM Node
-            // - or an LView Array that represents a component
-            // We only handle the DOM Node case here
-            if (Array.isArray(hostNode)) {
-                // this is a component
-                // Check to see if it has ngSkipHydration
-                // TODO: should we check `SKIP_HYDRATION_ATTR_NAME` in tNode.mergedAttrs?
-                targetNode = unwrapRNode(hostNode);
-                if (!targetNode.hasAttribute(SKIP_HYDRATION_ATTR_NAME)) {
-                    annotateHostElementForHydration(targetNode, hostNode, context);
-                }
-            }
-            const container = serializeLContainer(lView[i], context);
-            (_c = ngh[CONTAINERS]) !== null && _c !== void 0 ? _c : (ngh[CONTAINERS] = {});
-            ngh[CONTAINERS][adjustedIndex] = container;
-        }
-        else if (Array.isArray(lView[i])) {
-            // This is a component
-            // Check to see if it has ngSkipHydration
-            // TODO: should we check `SKIP_HYDRATION_ATTR_NAME` in tNode.mergedAttrs?
-            targetNode = unwrapRNode(lView[i][HOST]);
-            if (!targetNode.hasAttribute(SKIP_HYDRATION_ATTR_NAME)) {
-                annotateHostElementForHydration(targetNode, lView[i], context);
-            }
-        }
-        else if (isTI18nNode(tNode) || tNode.insertBeforeIndex) {
-            // TODO: implement hydration for i18n nodes
-            throw new Error('Hydration for i18n nodes is not implemented.');
-        }
-        else {
-            const tNodeType = tNode.type;
-            // <ng-container> case
-            if (tNodeType & 8 /* TNodeType.ElementContainer */) {
-                const rootNodes = [];
-                collectNativeNodes(tView, lView, tNode.child, rootNodes);
-                // This is an "element" container (vs "view" container),
-                // so it's only represented by the number of top-level nodes
-                // as a shift to get to a corresponding comment node.
-                const container = {
-                    [NUM_ROOT_NODES]: rootNodes.length,
-                };
-                (_d = ngh[CONTAINERS]) !== null && _d !== void 0 ? _d : (ngh[CONTAINERS] = {});
-                ngh[CONTAINERS][adjustedIndex] = container;
-            }
-            else if (tNodeType & 16 /* TNodeType.Projection */) {
-                // Current TNode has no DOM element associated with it,
-                // so the following node would not be able to find an anchor.
-                // Use full path instead.
-                let nextTNode = tNode.next;
-                while (nextTNode !== null && (nextTNode.type & 16 /* TNodeType.Projection */)) {
-                    nextTNode = nextTNode.next;
-                }
-                if (nextTNode) {
-                    const index = nextTNode.index - HEADER_OFFSET;
-                    if (!isInSkipHydrationBlock(nextTNode, lView)) {
-                        const path = calcPathForNode(lView, nextTNode);
-                        (_e = ngh[NODES]) !== null && _e !== void 0 ? _e : (ngh[NODES] = {});
-                        ngh[NODES][index] = path;
-                    }
-                }
-            }
-            else {
-                if (isDroppedProjectedNode(tNode)) {
-                    // This is a case where a node used in content projection
-                    // doesn't make it into one of the content projection slots
-                    // (for example, when there is no default <ng-content /> slot
-                    // in projector component's template).
-                    (_f = ngh[NODES]) !== null && _f !== void 0 ? _f : (ngh[NODES] = {});
-                    ngh[NODES][adjustedIndex] = DROPPED_PROJECTED_NODE;
-                }
-                else {
-                    // Handle cases where text nodes can be lost after DOM serialization:
-                    //  1. When there is an *empty text node* in DOM: in this case, this
-                    //     node would not make it into the serialized string and as s result,
-                    //     this node wouldn't be created in a browser. This would result in
-                    //     a mismatch during the hydration, where the runtime logic would expect
-                    //     a text node to be present in live DOM, but no text node would exist.
-                    //     Example: `<span>{{ name }}</span>` when the `name` is an empty string.
-                    //     This would result in `<span></span>` string after serialization and
-                    //     in a browser only the `span` element would be created. To resolve that,
-                    //     an extra comment node is appended in place of an empty text node and
-                    //     that special comment node is replaced with an empty text node *before*
-                    //     hydration.
-                    //  2. When there are 2 consecutive text nodes present in the DOM.
-                    //     Example: `<div>Hello <ng-container *ngIf="true">world</ng-container></div>`.
-                    //     In this scenario, the live DOM would look like this:
-                    //       <div>#text('Hello ') #text('world') #comment('container')</div>
-                    //     Serialized string would look like this: `<div>Hello world<!--container--></div>`.
-                    //     The live DOM in a browser after that would be:
-                    //       <div>#text('Hello world') #comment('container')</div>
-                    //     Notice how 2 text nodes are now "merged" into one. This would cause hydration
-                    //     logic to fail, since it'd expect 2 text nodes being present, not one.
-                    //     To fix this, we insert a special comment node in between those text nodes, so
-                    //     serialized representation is: `<div>Hello <!--ngtns-->world<!--container--></div>`.
-                    //     This forces browser to create 2 text nodes separated by a comment node.
-                    //     Before running a hydration process, this special comment node is removed, so the
-                    //     live DOM has exactly the same state as it was before serialization.
-                    if (tNodeType & 1 /* TNodeType.Text */) {
-                        const rNode = unwrapRNode(lView[i]);
-                        if (rNode.textContent === '') {
-                            context.corruptedTextNodes.set(EMPTY_TEXT_NODE_COMMENT, rNode);
-                        }
-                        else if (((_g = rNode.nextSibling) === null || _g === void 0 ? void 0 : _g.nodeType) === Node.TEXT_NODE) {
-                            context.corruptedTextNodes.set(TEXT_NODE_SEPARATOR_COMMENT, rNode);
-                        }
-                    }
-                    if (tNode.projectionNext && tNode.projectionNext !== tNode.next) {
-                        // Check if projection next is not the same as next, in which case
-                        // the node would not be found at creation time at runtime and we
-                        // need to provide a location to that node.
-                        const nextProjectedTNode = tNode.projectionNext;
-                        const index = nextProjectedTNode.index - HEADER_OFFSET;
-                        if (!isInSkipHydrationBlock(nextProjectedTNode, lView)) {
-                            const path = calcPathForNode(lView, nextProjectedTNode);
-                            (_h = ngh[NODES]) !== null && _h !== void 0 ? _h : (ngh[NODES] = {});
-                            ngh[NODES][index] = path;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return ngh;
-}
-function isRootLevelProjectionNode(tNode) {
-    return (tNode.flags & 2 /* TNodeFlags.isProjected */) === 2 /* TNodeFlags.isProjected */;
-}
-/**
- * Detect a case where a node used in content projection,
- * but doesn't make it into one of the content projection slots
- * (for example, when there is no default <ng-content /> slot
- * in projector component's template).
- */
-function isDroppedProjectedNode(tNode) {
-    let currentTNode = tNode;
-    let seenComponentHost = false;
-    while (currentTNode !== null) {
-        if (isComponentHost(currentTNode)) {
-            seenComponentHost = true;
-            break;
-        }
-        // If we come across a root projected node, return true.
-        if (isRootLevelProjectionNode(currentTNode)) {
-            return false;
-        }
-        currentTNode = currentTNode.parent;
-    }
-    // If we've seen a component host, but there was no root level
-    // projection node, this indicates that this not was not projected.
-    return seenComponentHost;
-}
-function calcPathForNode(lView, tNode, parentTNode) {
-    const index = tNode.index;
-    // If `null` is passed explicitly, use this as a signal that we want to calculate
-    // the path starting from `lView[HOST]`.
-    parentTNode = parentTNode === null ? null : (parentTNode || tNode.parent);
-    const parentIndex = parentTNode === null ? REFERENCE_NODE_HOST : parentTNode.index;
-    const parentRNode = parentTNode === null ? lView[HOST] : unwrapRNode(lView[parentIndex]);
-    let rNode = unwrapRNode(lView[index]);
-    if (tNode.type & 12 /* TNodeType.AnyContainer */) {
-        // For <ng-container> nodes, instead of serializing a reference
-        // to the anchor comment node, serialize a location of the first
-        // DOM element. Paired with the container size (serialized as a part
-        // of `ngh.containers`), it should give enough information for runtime
-        // to hydrate nodes in this container.
-        const firstRNode = getFirstNativeNode(lView, tNode);
-        // If container is not empty, use a reference to the first element,
-        // otherwise, rNode would point to an anchor comment node.
-        if (firstRNode) {
-            rNode = firstRNode;
-        }
-    }
-    const referenceNode = parentIndex === REFERENCE_NODE_HOST ? parentIndex : '' + (parentIndex - HEADER_OFFSET);
-    let path = calcPathBetween(parentRNode, rNode, referenceNode);
-    if (path === null && parentRNode !== rNode) {
-        // Searching for a path between elements within a host node failed.
-        // Trying to find a path to an element starting from the `document.body` instead.
-        const body = parentRNode.ownerDocument.body;
-        path = calcPathBetween(body, rNode, REFERENCE_NODE_BODY);
-        if (path === null) {
-            // If path is still empty, it's likely that this node is detached and
-            // won't be found during hydration.
-            // TODO: add a better error message, potentially suggesting `ngSkipHydration`.
-            throw new Error('Unable to locate element on a page.');
-        }
-    }
-    return path;
-}
-function serializeLContainer(lContainer, context) {
-    var _a, _b;
-    const container = {};
-    for (let i = CONTAINER_HEADER_OFFSET; i < lContainer.length; i++) {
-        let childLView = lContainer[i];
-        // Get LView for underlying component.
-        if (isRootView(childLView)) {
-            childLView = childLView[HEADER_OFFSET];
-        }
-        const childTView = childLView[TVIEW];
-        let template;
-        let numRootNodes = 0;
-        if (childTView.type === 1 /* TViewType.Component */) {
-            const ctx = childLView[CONTEXT];
-            const componentDef = getComponentDef(ctx.constructor);
-            template = getComponentId(componentDef);
-            // This is a component view, which has only 1 root node: the component
-            // host node itself (other nodes would be inside that host node).
-            numRootNodes = 1;
-        }
-        else {
-            template =
-                context.ssrIdRegistry.get(childTView); // from which template did this lView originate?
-            // Collect root nodes within this view.
-            const rootNodes = [];
-            collectNativeNodes(childTView, childLView, childTView.firstChild, rootNodes);
-            numRootNodes = rootNodes.length;
-        }
-        const view = Object.assign({ [TEMPLATE]: template, [NUM_ROOT_NODES]: numRootNodes }, serializeLView(lContainer[i], context));
-        (_a = container[VIEWS]) !== null && _a !== void 0 ? _a : (container[VIEWS] = []);
-        if (container[VIEWS].length > 0) {
-            const prevView = container[VIEWS].at(-1); // the last element in array
-            // Compare `view` and `prevView` to see if they are the same.
-            if (compareNghView(view, prevView)) {
-                (_b = prevView[MULTIPLIER]) !== null && _b !== void 0 ? _b : (prevView[MULTIPLIER] = 1);
-                prevView[MULTIPLIER]++;
-            }
-            else {
-                container[VIEWS].push(view);
-            }
-        }
-        else {
-            container[VIEWS].push(view);
-        }
-    }
-    return container;
-}
-function compareNghView(curr, prev) {
-    const prevClone = Object.assign({}, prev);
-    delete prevClone[MULTIPLIER];
-    return JSON.stringify(curr) === JSON.stringify(prevClone);
-}
-function annotateHostElementForHydration(element, lView, context) {
-    const rawNgh = serializeLView(lView, context);
-    let serializedNgh = '';
-    // Do not serialize an empty object
-    if (Object.keys(rawNgh).length > 0) {
-        serializedNgh = compressNghInfo(rawNgh);
-    }
-    if (context.profiler) {
-        if (serializedNgh.length === 0) {
-            context.profiler.incrementMetricValue("Components with empty NGH" /* SsrPerfMetrics.ComponentsWithEmptyNgh */, 1);
-        }
-        context.profiler.incrementMetricValue("Hydration annotation size (in character length)" /* SsrPerfMetrics.NghAnnotationSize */, serializedNgh.length + 7); // 7 to account for ' ngh=""'
-        context.profiler.incrementMetricValue("Serialized Components" /* SsrPerfMetrics.SerializedComponents */, 1); // increment by one more component
-    }
-    element.setAttribute(NGH_ATTR_NAME, serializedNgh);
-}
-function insertTextNodeMarkers(corruptedTextNodes, doc) {
-    for (let [marker, textNode] of corruptedTextNodes) {
-        textNode.after(doc.createComment(marker));
-    }
-}
-
-/**
  * Compiles a partial directive declaration object into a full directive definition object.
  *
  * @codeGenApi
@@ -29254,5 +29169,5 @@ if (typeof ngDevMode !== 'undefined' && ngDevMode) {
  * Generated bundle index. Do not edit.
  */
 
-export { ANALYZE_FOR_ENTRY_COMPONENTS, ANIMATION_MODULE_TYPE, APP_BOOTSTRAP_LISTENER, APP_ID, APP_INITIALIZER, ApplicationInitStatus, ApplicationModule, ApplicationRef, Attribute, COMPILER_OPTIONS, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, ChangeDetectorRef, Compiler, CompilerFactory, Component, ComponentFactory$1 as ComponentFactory, ComponentFactoryResolver$1 as ComponentFactoryResolver, ComponentRef$1 as ComponentRef, ContentChild, ContentChildren, DEFAULT_CURRENCY_CODE, DebugElement, DebugEventListener, DebugNode, DefaultIterableDiffer, Directive, ENVIRONMENT_INITIALIZER, ElementRef, EmbeddedViewRef, EnvironmentInjector, ErrorHandler, EventEmitter, Host, HostBinding, HostListener, INJECTOR, Inject, InjectFlags, Injectable, InjectionToken, Injector, Input, IterableDiffers, KeyValueDiffers, LOCALE_ID$1 as LOCALE_ID, MissingTranslationStrategy, ModuleWithComponentFactories, NO_ERRORS_SCHEMA, NgModule, NgModuleFactory$1 as NgModuleFactory, NgModuleRef$1 as NgModuleRef, NgProbeToken, NgZone, Optional, Output, PACKAGE_ROOT_URL, PLATFORM_ID, PLATFORM_INITIALIZER, Pipe, PlatformRef, Query, QueryList, ReflectiveInjector, ReflectiveKey, Renderer2, RendererFactory2, RendererStyleFlags2, ResolvedReflectiveFactory, Sanitizer, SecurityContext, Self, SimpleChange, SkipSelf, TRANSLATIONS, TRANSLATIONS_FORMAT, TemplateRef, Testability, TestabilityRegistry, Type, VERSION, Version, ViewChild, ViewChildren, ViewContainerRef, ViewEncapsulation$1 as ViewEncapsulation, ViewRef, asNativeElements, assertPlatform, createComponent, createEnvironmentInjector, createNgModule, createNgModuleRef, createPlatform, createPlatformFactory, defineInjectable, destroyPlatform, enableProdMode, forwardRef, getDebugNode, getModuleFactory, getNgModuleById, getPlatform, importProvidersFrom, inject, isDevMode, isStandalone, makeEnvironmentProviders, platformCore, provideHydrationSupport, reflectComponentType, resolveForwardRef, setTestabilityGetter, ALLOW_MULTIPLE_PLATFORMS as ɵALLOW_MULTIPLE_PLATFORMS, APP_ID_RANDOM_PROVIDER as ɵAPP_ID_RANDOM_PROVIDER, ChangeDetectorStatus as ɵChangeDetectorStatus, ComponentFactory$1 as ɵComponentFactory, Console as ɵConsole, DEFAULT_LOCALE_ID as ɵDEFAULT_LOCALE_ID, INJECTOR_SCOPE as ɵINJECTOR_SCOPE, IS_HYDRATION_FEATURE_ENABLED as ɵIS_HYDRATION_FEATURE_ENABLED, LContext as ɵLContext, LifecycleHooksFeature as ɵLifecycleHooksFeature, LocaleDataIndex as ɵLocaleDataIndex, NG_COMP_DEF as ɵNG_COMP_DEF, NG_DIR_DEF as ɵNG_DIR_DEF, NG_ELEMENT_ID as ɵNG_ELEMENT_ID, NG_INJ_DEF as ɵNG_INJ_DEF, NG_MOD_DEF as ɵNG_MOD_DEF, NG_PIPE_DEF as ɵNG_PIPE_DEF, NG_PROV_DEF as ɵNG_PROV_DEF, NOT_FOUND_CHECK_ONLY_ELEMENT_INJECTOR as ɵNOT_FOUND_CHECK_ONLY_ELEMENT_INJECTOR, NO_CHANGE as ɵNO_CHANGE, NgModuleFactory as ɵNgModuleFactory, NoopNgZone as ɵNoopNgZone, ReflectionCapabilities as ɵReflectionCapabilities, ComponentFactory as ɵRender3ComponentFactory, ComponentRef as ɵRender3ComponentRef, NgModuleRef as ɵRender3NgModuleRef, RuntimeError as ɵRuntimeError, SsrProfiler as ɵSsrProfiler, TESTABILITY as ɵTESTABILITY, TESTABILITY_GETTER as ɵTESTABILITY_GETTER, ViewRef$1 as ɵViewRef, XSS_SECURITY_URL as ɵXSS_SECURITY_URL, _sanitizeHtml as ɵ_sanitizeHtml, _sanitizeUrl as ɵ_sanitizeUrl, allowSanitizationBypassAndThrow as ɵallowSanitizationBypassAndThrow, annotateForHydration as ɵannotateForHydration, bypassSanitizationTrustHtml as ɵbypassSanitizationTrustHtml, bypassSanitizationTrustResourceUrl as ɵbypassSanitizationTrustResourceUrl, bypassSanitizationTrustScript as ɵbypassSanitizationTrustScript, bypassSanitizationTrustStyle as ɵbypassSanitizationTrustStyle, bypassSanitizationTrustUrl as ɵbypassSanitizationTrustUrl, clearResolutionOfComponentResourcesQueue as ɵclearResolutionOfComponentResourcesQueue, coerceToBoolean as ɵcoerceToBoolean, compileComponent as ɵcompileComponent, compileDirective as ɵcompileDirective, compileNgModule as ɵcompileNgModule, compileNgModuleDefs as ɵcompileNgModuleDefs, compileNgModuleFactory as ɵcompileNgModuleFactory, compilePipe as ɵcompilePipe, convertToBitFlags as ɵconvertToBitFlags, createInjector as ɵcreateInjector, defaultIterableDiffers as ɵdefaultIterableDiffers, defaultKeyValueDiffers as ɵdefaultKeyValueDiffers, detectChanges as ɵdetectChanges, devModeEqual as ɵdevModeEqual, disableSsrPeformanceProfiler as ɵdisableSsrPeformanceProfiler, enableSsrPeformanceProfiler as ɵenableSsrPeformanceProfiler, findLocaleData as ɵfindLocaleData, flushModuleScopingQueueAsMuchAsPossible as ɵflushModuleScopingQueueAsMuchAsPossible, formatRuntimeError as ɵformatRuntimeError, getDebugNode as ɵgetDebugNode, getDebugNodeR2 as ɵgetDebugNodeR2, getDirectives as ɵgetDirectives, getHostElement as ɵgetHostElement, getInjectableDef as ɵgetInjectableDef, getLContext as ɵgetLContext, getLocaleCurrencyCode as ɵgetLocaleCurrencyCode, getLocalePluralCase as ɵgetLocalePluralCase, getSanitizationBypassType as ɵgetSanitizationBypassType, getSsrProfiler as ɵgetSsrProfiler, ɵgetUnknownElementStrictMode, ɵgetUnknownPropertyStrictMode, _global as ɵglobal, injectChangeDetectorRef as ɵinjectChangeDetectorRef, internalCreateApplication as ɵinternalCreateApplication, isBoundToModule as ɵisBoundToModule, isDefaultChangeDetectionStrategy as ɵisDefaultChangeDetectionStrategy, isEnvironmentProviders as ɵisEnvironmentProviders, isInjectable as ɵisInjectable, isListLikeIterable as ɵisListLikeIterable, isObservable as ɵisObservable, isPromise as ɵisPromise, isSsrProfilerEnabled as ɵisSsrProfilerEnabled, isSubscribable as ɵisSubscribable, ɵivyEnabled, makeDecorator as ɵmakeDecorator, noSideEffects as ɵnoSideEffects, patchComponentDefWithScope as ɵpatchComponentDefWithScope, publishDefaultGlobalUtils$1 as ɵpublishDefaultGlobalUtils, publishGlobalUtil as ɵpublishGlobalUtil, registerLocaleData as ɵregisterLocaleData, resetCompiledComponents as ɵresetCompiledComponents, resetJitOptions as ɵresetJitOptions, resolveComponentResources as ɵresolveComponentResources, setAllowDuplicateNgModuleIdsForTest as ɵsetAllowDuplicateNgModuleIdsForTest, setClassMetadata as ɵsetClassMetadata, setCurrentInjector as ɵsetCurrentInjector, setDocument as ɵsetDocument, setLocaleId as ɵsetLocaleId, ɵsetUnknownElementStrictMode, ɵsetUnknownPropertyStrictMode, store as ɵstore, stringify as ɵstringify, transitiveScopesFor as ɵtransitiveScopesFor, unregisterAllLocaleData as ɵunregisterLocaleData, unwrapSafeValue as ɵunwrapSafeValue, ɵɵCopyDefinitionFeature, FactoryTarget as ɵɵFactoryTarget, ɵɵHostDirectivesFeature, ɵɵInheritDefinitionFeature, ɵɵNgOnChangesFeature, ɵɵProvidersFeature, ɵɵStandaloneFeature, ɵɵadvance, ɵɵattribute, ɵɵattributeInterpolate1, ɵɵattributeInterpolate2, ɵɵattributeInterpolate3, ɵɵattributeInterpolate4, ɵɵattributeInterpolate5, ɵɵattributeInterpolate6, ɵɵattributeInterpolate7, ɵɵattributeInterpolate8, ɵɵattributeInterpolateV, ɵɵclassMap, ɵɵclassMapInterpolate1, ɵɵclassMapInterpolate2, ɵɵclassMapInterpolate3, ɵɵclassMapInterpolate4, ɵɵclassMapInterpolate5, ɵɵclassMapInterpolate6, ɵɵclassMapInterpolate7, ɵɵclassMapInterpolate8, ɵɵclassMapInterpolateV, ɵɵclassProp, ɵɵcontentQuery, ɵɵdefineComponent, ɵɵdefineDirective, ɵɵdefineInjectable, ɵɵdefineInjector, ɵɵdefineNgModule, ɵɵdefinePipe, ɵɵdirectiveInject, ɵɵdisableBindings, ɵɵelement, ɵɵelementContainer, ɵɵelementContainerEnd, ɵɵelementContainerStart, ɵɵelementEnd, ɵɵelementStart, ɵɵenableBindings, ɵɵgetCurrentView, ɵɵgetInheritedFactory, ɵɵhostProperty, ɵɵi18n, ɵɵi18nApply, ɵɵi18nAttributes, ɵɵi18nEnd, ɵɵi18nExp, ɵɵi18nPostprocess, ɵɵi18nStart, ɵɵinject, ɵɵinjectAttribute, ɵɵinvalidFactory, ɵɵinvalidFactoryDep, ɵɵlistener, ɵɵloadQuery, ɵɵnamespaceHTML, ɵɵnamespaceMathML, ɵɵnamespaceSVG, ɵɵnextContext, ɵɵngDeclareClassMetadata, ɵɵngDeclareComponent, ɵɵngDeclareDirective, ɵɵngDeclareFactory, ɵɵngDeclareInjectable, ɵɵngDeclareInjector, ɵɵngDeclareNgModule, ɵɵngDeclarePipe, ɵɵpipe, ɵɵpipeBind1, ɵɵpipeBind2, ɵɵpipeBind3, ɵɵpipeBind4, ɵɵpipeBindV, ɵɵprojection, ɵɵprojectionDef, ɵɵproperty, ɵɵpropertyInterpolate, ɵɵpropertyInterpolate1, ɵɵpropertyInterpolate2, ɵɵpropertyInterpolate3, ɵɵpropertyInterpolate4, ɵɵpropertyInterpolate5, ɵɵpropertyInterpolate6, ɵɵpropertyInterpolate7, ɵɵpropertyInterpolate8, ɵɵpropertyInterpolateV, ɵɵpureFunction0, ɵɵpureFunction1, ɵɵpureFunction2, ɵɵpureFunction3, ɵɵpureFunction4, ɵɵpureFunction5, ɵɵpureFunction6, ɵɵpureFunction7, ɵɵpureFunction8, ɵɵpureFunctionV, ɵɵqueryRefresh, ɵɵreference, registerNgModuleType as ɵɵregisterNgModuleType, ɵɵresetView, ɵɵresolveBody, ɵɵresolveDocument, ɵɵresolveWindow, ɵɵrestoreView, ɵɵsanitizeHtml, ɵɵsanitizeResourceUrl, ɵɵsanitizeScript, ɵɵsanitizeStyle, ɵɵsanitizeUrl, ɵɵsanitizeUrlOrResourceUrl, ɵɵsetComponentScope, ɵɵsetNgModuleScope, ɵɵstyleMap, ɵɵstyleMapInterpolate1, ɵɵstyleMapInterpolate2, ɵɵstyleMapInterpolate3, ɵɵstyleMapInterpolate4, ɵɵstyleMapInterpolate5, ɵɵstyleMapInterpolate6, ɵɵstyleMapInterpolate7, ɵɵstyleMapInterpolate8, ɵɵstyleMapInterpolateV, ɵɵstyleProp, ɵɵstylePropInterpolate1, ɵɵstylePropInterpolate2, ɵɵstylePropInterpolate3, ɵɵstylePropInterpolate4, ɵɵstylePropInterpolate5, ɵɵstylePropInterpolate6, ɵɵstylePropInterpolate7, ɵɵstylePropInterpolate8, ɵɵstylePropInterpolateV, ɵɵsyntheticHostListener, ɵɵsyntheticHostProperty, ɵɵtemplate, ɵɵtemplateRefExtractor, ɵɵtext, ɵɵtextInterpolate, ɵɵtextInterpolate1, ɵɵtextInterpolate2, ɵɵtextInterpolate3, ɵɵtextInterpolate4, ɵɵtextInterpolate5, ɵɵtextInterpolate6, ɵɵtextInterpolate7, ɵɵtextInterpolate8, ɵɵtextInterpolateV, ɵɵtrustConstantHtml, ɵɵtrustConstantResourceUrl, ɵɵvalidateIframeAttribute, ɵɵviewQuery };
+export { ANALYZE_FOR_ENTRY_COMPONENTS, ANIMATION_MODULE_TYPE, APP_BOOTSTRAP_LISTENER, APP_ID, APP_INITIALIZER, ApplicationInitStatus, ApplicationModule, ApplicationRef, Attribute, COMPILER_OPTIONS, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, ChangeDetectorRef, Compiler, CompilerFactory, Component, ComponentFactory$1 as ComponentFactory, ComponentFactoryResolver$1 as ComponentFactoryResolver, ComponentRef$1 as ComponentRef, ContentChild, ContentChildren, DEFAULT_CURRENCY_CODE, DebugElement, DebugEventListener, DebugNode, DefaultIterableDiffer, Directive, ENVIRONMENT_INITIALIZER, ElementRef, EmbeddedViewRef, EnvironmentInjector, ErrorHandler, EventEmitter, Host, HostBinding, HostListener, INJECTOR, Inject, InjectFlags, Injectable, InjectionToken, Injector, Input, IterableDiffers, KeyValueDiffers, LOCALE_ID$1 as LOCALE_ID, MissingTranslationStrategy, ModuleWithComponentFactories, NO_ERRORS_SCHEMA, NgModule, NgModuleFactory$1 as NgModuleFactory, NgModuleRef$1 as NgModuleRef, NgProbeToken, NgZone, Optional, Output, PACKAGE_ROOT_URL, PLATFORM_ID, PLATFORM_INITIALIZER, Pipe, PlatformRef, Query, QueryList, ReflectiveInjector, ReflectiveKey, Renderer2, RendererFactory2, RendererStyleFlags2, ResolvedReflectiveFactory, Sanitizer, SecurityContext, Self, SimpleChange, SkipSelf, TRANSLATIONS, TRANSLATIONS_FORMAT, TemplateRef, Testability, TestabilityRegistry, Type, VERSION, Version, ViewChild, ViewChildren, ViewContainerRef, ViewEncapsulation$1 as ViewEncapsulation, ViewRef, asNativeElements, assertPlatform, createComponent, createEnvironmentInjector, createNgModule, createNgModuleRef, createPlatform, createPlatformFactory, defineInjectable, destroyPlatform, enableProdMode, forwardRef, getDebugNode, getModuleFactory, getNgModuleById, getPlatform, importProvidersFrom, inject, isDevMode, isStandalone, makeEnvironmentProviders, platformCore, reflectComponentType, resolveForwardRef, setTestabilityGetter, ALLOW_MULTIPLE_PLATFORMS as ɵALLOW_MULTIPLE_PLATFORMS, APP_ID_RANDOM_PROVIDER as ɵAPP_ID_RANDOM_PROVIDER, ChangeDetectorStatus as ɵChangeDetectorStatus, ComponentFactory$1 as ɵComponentFactory, Console as ɵConsole, DEFAULT_LOCALE_ID as ɵDEFAULT_LOCALE_ID, INJECTOR_SCOPE as ɵINJECTOR_SCOPE, IS_HYDRATION_FEATURE_ENABLED as ɵIS_HYDRATION_FEATURE_ENABLED, LContext as ɵLContext, LifecycleHooksFeature as ɵLifecycleHooksFeature, LocaleDataIndex as ɵLocaleDataIndex, NG_COMP_DEF as ɵNG_COMP_DEF, NG_DIR_DEF as ɵNG_DIR_DEF, NG_ELEMENT_ID as ɵNG_ELEMENT_ID, NG_INJ_DEF as ɵNG_INJ_DEF, NG_MOD_DEF as ɵNG_MOD_DEF, NG_PIPE_DEF as ɵNG_PIPE_DEF, NG_PROV_DEF as ɵNG_PROV_DEF, NOT_FOUND_CHECK_ONLY_ELEMENT_INJECTOR as ɵNOT_FOUND_CHECK_ONLY_ELEMENT_INJECTOR, NO_CHANGE as ɵNO_CHANGE, NgModuleFactory as ɵNgModuleFactory, NoopNgZone as ɵNoopNgZone, ReflectionCapabilities as ɵReflectionCapabilities, ComponentFactory as ɵRender3ComponentFactory, ComponentRef as ɵRender3ComponentRef, NgModuleRef as ɵRender3NgModuleRef, RuntimeError as ɵRuntimeError, SsrProfiler as ɵSsrProfiler, TESTABILITY as ɵTESTABILITY, TESTABILITY_GETTER as ɵTESTABILITY_GETTER, TRANSFER_STATE as ɵTRANSFER_STATE, TRANSFER_STATE_TOKEN_ID as ɵTRANSFER_STATE_TOKEN_ID, ViewRef$1 as ɵViewRef, XSS_SECURITY_URL as ɵXSS_SECURITY_URL, _sanitizeHtml as ɵ_sanitizeHtml, _sanitizeUrl as ɵ_sanitizeUrl, allowSanitizationBypassAndThrow as ɵallowSanitizationBypassAndThrow, annotateForHydration as ɵannotateForHydration, bypassSanitizationTrustHtml as ɵbypassSanitizationTrustHtml, bypassSanitizationTrustResourceUrl as ɵbypassSanitizationTrustResourceUrl, bypassSanitizationTrustScript as ɵbypassSanitizationTrustScript, bypassSanitizationTrustStyle as ɵbypassSanitizationTrustStyle, bypassSanitizationTrustUrl as ɵbypassSanitizationTrustUrl, clearResolutionOfComponentResourcesQueue as ɵclearResolutionOfComponentResourcesQueue, coerceToBoolean as ɵcoerceToBoolean, compileComponent as ɵcompileComponent, compileDirective as ɵcompileDirective, compileNgModule as ɵcompileNgModule, compileNgModuleDefs as ɵcompileNgModuleDefs, compileNgModuleFactory as ɵcompileNgModuleFactory, compilePipe as ɵcompilePipe, convertToBitFlags as ɵconvertToBitFlags, createInjector as ɵcreateInjector, defaultIterableDiffers as ɵdefaultIterableDiffers, defaultKeyValueDiffers as ɵdefaultKeyValueDiffers, detectChanges as ɵdetectChanges, devModeEqual as ɵdevModeEqual, disableSsrPeformanceProfiler as ɵdisableSsrPeformanceProfiler, enableSsrPeformanceProfiler as ɵenableSsrPeformanceProfiler, findLocaleData as ɵfindLocaleData, flushModuleScopingQueueAsMuchAsPossible as ɵflushModuleScopingQueueAsMuchAsPossible, formatRuntimeError as ɵformatRuntimeError, getDebugNode as ɵgetDebugNode, getDebugNodeR2 as ɵgetDebugNodeR2, getDirectives as ɵgetDirectives, getHostElement as ɵgetHostElement, getInjectableDef as ɵgetInjectableDef, getLContext as ɵgetLContext, getLocaleCurrencyCode as ɵgetLocaleCurrencyCode, getLocalePluralCase as ɵgetLocalePluralCase, getSanitizationBypassType as ɵgetSanitizationBypassType, getSsrProfiler as ɵgetSsrProfiler, ɵgetUnknownElementStrictMode, ɵgetUnknownPropertyStrictMode, _global as ɵglobal, injectChangeDetectorRef as ɵinjectChangeDetectorRef, internalCreateApplication as ɵinternalCreateApplication, internalProvideHydrationSupport as ɵinternalProvideHydrationSupport, isBoundToModule as ɵisBoundToModule, isDefaultChangeDetectionStrategy as ɵisDefaultChangeDetectionStrategy, isEnvironmentProviders as ɵisEnvironmentProviders, isInjectable as ɵisInjectable, isListLikeIterable as ɵisListLikeIterable, isObservable as ɵisObservable, isPromise as ɵisPromise, isSsrProfilerEnabled as ɵisSsrProfilerEnabled, isSubscribable as ɵisSubscribable, ɵivyEnabled, makeDecorator as ɵmakeDecorator, noSideEffects as ɵnoSideEffects, patchComponentDefWithScope as ɵpatchComponentDefWithScope, publishDefaultGlobalUtils$1 as ɵpublishDefaultGlobalUtils, publishGlobalUtil as ɵpublishGlobalUtil, registerLocaleData as ɵregisterLocaleData, resetCompiledComponents as ɵresetCompiledComponents, resetJitOptions as ɵresetJitOptions, resolveComponentResources as ɵresolveComponentResources, setAllowDuplicateNgModuleIdsForTest as ɵsetAllowDuplicateNgModuleIdsForTest, setClassMetadata as ɵsetClassMetadata, setCurrentInjector as ɵsetCurrentInjector, setDocument as ɵsetDocument, setLocaleId as ɵsetLocaleId, ɵsetUnknownElementStrictMode, ɵsetUnknownPropertyStrictMode, store as ɵstore, stringify as ɵstringify, transitiveScopesFor as ɵtransitiveScopesFor, unregisterAllLocaleData as ɵunregisterLocaleData, unwrapSafeValue as ɵunwrapSafeValue, ɵɵCopyDefinitionFeature, FactoryTarget as ɵɵFactoryTarget, ɵɵHostDirectivesFeature, ɵɵInheritDefinitionFeature, ɵɵNgOnChangesFeature, ɵɵProvidersFeature, ɵɵStandaloneFeature, ɵɵadvance, ɵɵattribute, ɵɵattributeInterpolate1, ɵɵattributeInterpolate2, ɵɵattributeInterpolate3, ɵɵattributeInterpolate4, ɵɵattributeInterpolate5, ɵɵattributeInterpolate6, ɵɵattributeInterpolate7, ɵɵattributeInterpolate8, ɵɵattributeInterpolateV, ɵɵclassMap, ɵɵclassMapInterpolate1, ɵɵclassMapInterpolate2, ɵɵclassMapInterpolate3, ɵɵclassMapInterpolate4, ɵɵclassMapInterpolate5, ɵɵclassMapInterpolate6, ɵɵclassMapInterpolate7, ɵɵclassMapInterpolate8, ɵɵclassMapInterpolateV, ɵɵclassProp, ɵɵcontentQuery, ɵɵdefineComponent, ɵɵdefineDirective, ɵɵdefineInjectable, ɵɵdefineInjector, ɵɵdefineNgModule, ɵɵdefinePipe, ɵɵdirectiveInject, ɵɵdisableBindings, ɵɵelement, ɵɵelementContainer, ɵɵelementContainerEnd, ɵɵelementContainerStart, ɵɵelementEnd, ɵɵelementStart, ɵɵenableBindings, ɵɵgetCurrentView, ɵɵgetInheritedFactory, ɵɵhostProperty, ɵɵi18n, ɵɵi18nApply, ɵɵi18nAttributes, ɵɵi18nEnd, ɵɵi18nExp, ɵɵi18nPostprocess, ɵɵi18nStart, ɵɵinject, ɵɵinjectAttribute, ɵɵinvalidFactory, ɵɵinvalidFactoryDep, ɵɵlistener, ɵɵloadQuery, ɵɵnamespaceHTML, ɵɵnamespaceMathML, ɵɵnamespaceSVG, ɵɵnextContext, ɵɵngDeclareClassMetadata, ɵɵngDeclareComponent, ɵɵngDeclareDirective, ɵɵngDeclareFactory, ɵɵngDeclareInjectable, ɵɵngDeclareInjector, ɵɵngDeclareNgModule, ɵɵngDeclarePipe, ɵɵpipe, ɵɵpipeBind1, ɵɵpipeBind2, ɵɵpipeBind3, ɵɵpipeBind4, ɵɵpipeBindV, ɵɵprojection, ɵɵprojectionDef, ɵɵproperty, ɵɵpropertyInterpolate, ɵɵpropertyInterpolate1, ɵɵpropertyInterpolate2, ɵɵpropertyInterpolate3, ɵɵpropertyInterpolate4, ɵɵpropertyInterpolate5, ɵɵpropertyInterpolate6, ɵɵpropertyInterpolate7, ɵɵpropertyInterpolate8, ɵɵpropertyInterpolateV, ɵɵpureFunction0, ɵɵpureFunction1, ɵɵpureFunction2, ɵɵpureFunction3, ɵɵpureFunction4, ɵɵpureFunction5, ɵɵpureFunction6, ɵɵpureFunction7, ɵɵpureFunction8, ɵɵpureFunctionV, ɵɵqueryRefresh, ɵɵreference, registerNgModuleType as ɵɵregisterNgModuleType, ɵɵresetView, ɵɵresolveBody, ɵɵresolveDocument, ɵɵresolveWindow, ɵɵrestoreView, ɵɵsanitizeHtml, ɵɵsanitizeResourceUrl, ɵɵsanitizeScript, ɵɵsanitizeStyle, ɵɵsanitizeUrl, ɵɵsanitizeUrlOrResourceUrl, ɵɵsetComponentScope, ɵɵsetNgModuleScope, ɵɵstyleMap, ɵɵstyleMapInterpolate1, ɵɵstyleMapInterpolate2, ɵɵstyleMapInterpolate3, ɵɵstyleMapInterpolate4, ɵɵstyleMapInterpolate5, ɵɵstyleMapInterpolate6, ɵɵstyleMapInterpolate7, ɵɵstyleMapInterpolate8, ɵɵstyleMapInterpolateV, ɵɵstyleProp, ɵɵstylePropInterpolate1, ɵɵstylePropInterpolate2, ɵɵstylePropInterpolate3, ɵɵstylePropInterpolate4, ɵɵstylePropInterpolate5, ɵɵstylePropInterpolate6, ɵɵstylePropInterpolate7, ɵɵstylePropInterpolate8, ɵɵstylePropInterpolateV, ɵɵsyntheticHostListener, ɵɵsyntheticHostProperty, ɵɵtemplate, ɵɵtemplateRefExtractor, ɵɵtext, ɵɵtextInterpolate, ɵɵtextInterpolate1, ɵɵtextInterpolate2, ɵɵtextInterpolate3, ɵɵtextInterpolate4, ɵɵtextInterpolate5, ɵɵtextInterpolate6, ɵɵtextInterpolate7, ɵɵtextInterpolate8, ɵɵtextInterpolateV, ɵɵtrustConstantHtml, ɵɵtrustConstantResourceUrl, ɵɵvalidateIframeAttribute, ɵɵviewQuery };
 //# sourceMappingURL=core.mjs.map

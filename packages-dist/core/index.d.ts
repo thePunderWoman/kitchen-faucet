@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.2.0-next.2+sha-a37b7ea
+ * @license Angular v15.2.0-next.2+sha-8dbcb73
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4619,7 +4619,7 @@ declare interface LContainer extends Array<any> {
     /**
      * TODO: add docs!
      */
-    [DEHYDRATED_VIEWS]: NghView[] | null;
+    [DEHYDRATED_VIEWS]: NghViewInstance[] | null;
 }
 
 /**
@@ -4946,7 +4946,7 @@ declare interface LView<T = unknown> extends Array<any> {
     /**
      * TODO: add docs!
      */
-    [HYDRATION_INFO]: NghDom | null;
+    [HYDRATION_INFO]: NghDomInstance | null;
     /**
      * Optional injector assigned to embedded views that takes
      * precedence over the element and module injectors.
@@ -5079,8 +5079,6 @@ declare const NEXT = 4;
 declare interface NghContainer {
     [VIEWS]?: NghView[];
     [NUM_ROOT_NODES]?: number;
-    firstChild?: HTMLElement;
-    dehydratedViews?: NghView[];
 }
 
 /**
@@ -5090,7 +5088,19 @@ declare interface NghDom {
     [NODES]?: Record<number, string>;
     [CONTAINERS]?: Record<number, NghContainer>;
     [TEMPLATES]?: Record<number, string>;
+}
+
+declare interface NghDomInstance {
+    data: Readonly<NghDom>;
     firstChild?: HTMLElement;
+    elementContainers?: {
+        [index: number]: NghElementContainerInstance;
+    };
+}
+
+declare interface NghElementContainerInstance {
+    firstChild?: HTMLElement;
+    dehydratedViews?: NghViewInstance[];
 }
 
 /**
@@ -5100,7 +5110,10 @@ declare interface NghView extends NghDom {
     [TEMPLATE]: string;
     [NUM_ROOT_NODES]: number;
     [MULTIPLIER]?: number;
-    firstChild?: HTMLElement;
+}
+
+declare interface NghViewInstance extends NghDomInstance {
+    data: Readonly<NghView>;
 }
 
 /**
@@ -6017,14 +6030,6 @@ declare type PropertyAliases = {
  * e.g. [0, 'change-minified']
  */
 declare type PropertyAliasValue = (number | string)[];
-
-/**
- * TODO: add docs
- *
- * @publicApi
- * @developerPreview
- */
-export declare function provideHydrationSupport(): EnvironmentProviders;
 
 /**
  * Describes how the `Injector` should be configured.
@@ -7431,6 +7436,11 @@ export declare interface SkipSelfDecorator {
     new (): SkipSelf;
 }
 
+declare type StateKey<T> = string & {
+    __not_a_string: never;
+    __value_type?: T;
+};
+
 /**
  * Configures the `Injector` to return an instance of `useClass` for a token.
  * @see ["Dependency Injection Guide"](guide/dependency-injection).
@@ -8541,6 +8551,43 @@ export declare interface TrackByFunction<T> {
 }
 
 /**
+ * This is an interface that represents the `TransferState` class
+ * from the `platform-browser` package.
+ * TODO: the `TransferState` from the `platform-browser` package
+ * should implement this interface (to avoid divergence).
+ */
+declare interface TransferState {
+    /**
+     * Get the value corresponding to a key. Return `defaultValue` if key is not found.
+     */
+    get<T>(key: StateKey<T>, defaultValue: T): T;
+    /**
+     * Set the value corresponding to a key.
+     */
+    set<T>(key: StateKey<T>, value: T): void;
+    /**
+     * Remove a key from the store.
+     */
+    remove<T>(key: StateKey<T>): void;
+    /**
+     * Test whether a key exists in the store.
+     */
+    hasKey<T>(key: StateKey<T>): boolean;
+    /**
+     * Indicates whether the state is empty.
+     */
+    get isEmpty(): boolean;
+    /**
+     * Register a callback to provide the value for a key when `toJson` is called.
+     */
+    onSerialize<T>(key: StateKey<T>, callback: () => T): void;
+    /**
+     * Serialize the current state of the store to JSON.
+     */
+    toJson(): string;
+}
+
+/**
  * Use this token at bootstrap to provide the content of your translation file (`xtb`,
  * `xlf` or `xlf2`) when you want to translate your application in another language.
  *
@@ -9580,7 +9627,7 @@ export declare function ɵallowSanitizationBypassAndThrow(value: any, type: ɵBy
  * @param appRef A current instance of an ApplicationRef.
  * @param doc A reference to the current Document instance.
  */
-export declare function ɵannotateForHydration(appRef: ApplicationRef, doc: Document, profiler: ɵSsrProfiler | null): void;
+export declare function ɵannotateForHydration(appRef: ApplicationRef, doc: Document, transferState: TransferState, profiler: ɵSsrProfiler | null): void;
 
 /**
  * Providers that generate a random `APP_ID_TOKEN`.
@@ -10360,6 +10407,11 @@ export declare interface ɵInternalEnvironmentProviders extends EnvironmentProvi
 }
 
 /**
+ * TODO: refactor and/or rename this function!
+ */
+export declare function ɵinternalProvideHydrationSupport(): Provider[];
+
+/**
  * Internal token that specifies whether hydration is enabled.
  */
 export declare const ɵIS_HYDRATION_FEATURE_ENABLED: InjectionToken<boolean>;
@@ -11099,6 +11151,13 @@ export declare const ɵTESTABILITY: InjectionToken<Testability>;
  * Internal injection token to retrieve Testability getter class instance.
  */
 export declare const ɵTESTABILITY_GETTER: InjectionToken<GetTestability>;
+
+/**
+ * TODO: add docs!
+ */
+export declare const ɵTRANSFER_STATE: InjectionToken<TransferState>;
+
+export declare const ɵTRANSFER_STATE_TOKEN_ID = "__\u0275nghData__";
 
 /**
  * Compute the pair of transitive scopes (compilation scope and exported scope) for a given type

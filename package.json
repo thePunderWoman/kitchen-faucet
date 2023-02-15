@@ -23,7 +23,8 @@
     "@angular/platform-browser-dynamic": "file:packages-dist/platform-browser-dynamic",
     "@angular/platform-server": "file:packages-dist/platform-server",
     "@angular/router": "file:packages-dist/router",
-    "@angular/material": "^15.1.0",
+    "@angular/material": "file:packages-dist/material",
+    "@angular/cdk": "file:packages-dist/cdk",
     "@nguniversal/express-engine": "^15.1.0",
     "express": "^4.15.2",
     "rxjs": "~7.8.0",
@@ -58,6 +59,7 @@
     "@angular/platform-server": "file:packages-dist/platform-server",
     "@angular/router": "file:packages-dist/router",
     "@angular/compiler-cli": "file:packages-dist/compiler-cli",
-    "@angular/language-service": "file:packages-dist/language-service"
+    "@angular/material": "file:packages-dist/material",
+    "@angular/cdk": "file:packages-dist/cdk"
   }
 }

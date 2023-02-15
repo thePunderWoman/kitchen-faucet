@@ -1,5 +1,5 @@
 <h2>Autocomplete</h2>
-<mat-autocomplete ngSkipHydration>
+<mat-autocomplete>
   <mat-option>Grace Hopper</mat-option>
   <mat-option>Anita Borg</mat-option>
   <mat-option>Ada Lovelace</mat-option>
@@ -68,22 +68,22 @@
 <h2>Chips</h2>
 
 <mat-chip-list>
-  <mat-chip ngSkipHydration>Barbeque Cheddar</mat-chip>
-  <mat-chip ngSkipHydration>Sea Salt and Vinegar</mat-chip>
-  <mat-chip ngSkipHydration>Manta Ray</mat-chip>
+  <mat-chip>Barbeque Cheddar</mat-chip>
+  <mat-chip>Sea Salt and Vinegar</mat-chip>
+  <mat-chip>Manta Ray</mat-chip>
 </mat-chip-list>
 
 <mat-chip-list>
-  <mat-basic-chip ngSkipHydration>Tomato</mat-basic-chip>
-  <mat-basic-chip ngSkipHydration>Scallion</mat-basic-chip>
-  <mat-basic-chip ngSkipHydration>Cilantro</mat-basic-chip>
+  <mat-basic-chip>Tomato</mat-basic-chip>
+  <mat-basic-chip>Scallion</mat-basic-chip>
+  <mat-basic-chip>Cilantro</mat-basic-chip>
 </mat-chip-list>
 
 
  <h2>Datepicker</h2>
 
 <!-- material form fields seem to have issues with the label creation -->
-<mat-form-field ngSkipHydration>
+<mat-form-field>
   <input type="text" matInput [matDatepicker]="birthday" placeholder="Birthday">
   <mat-datepicker-toggle matSuffix [for]="birthday"></mat-datepicker-toggle>
   <mat-datepicker #birthday></mat-datepicker>
@@ -91,7 +91,7 @@
 
 <h2>Disabled datepicker</h2>
 
-<mat-form-field ngSkipHydration>
+<mat-form-field>
   <input type="text" disabled matInput [matDatepicker]="departureDate" placeholder="Departure date">
   <mat-datepicker-toggle matSuffix [for]="departureDate"></mat-datepicker-toggle>
   <mat-datepicker #departureDate></mat-datepicker>
@@ -125,7 +125,7 @@
   <textarea matInput placeholder="description"></textarea>
 </mat-form-field>
 <!-- problems specifically with mat-error, but ngSkipHydration has to be put on the parent element -->
-<mat-form-field ngSkipHydration>
+<mat-form-field>
   <input type="number" matInput placeholder="amount">
   <span matPrefix>$&nbsp;</span>
   <span matSuffix>.00</span>
@@ -156,7 +156,7 @@
 <h2>Menu</h2>
 
 <button mat-button [matMenuTriggerFor]="menu">Open</button>
-<mat-menu #menu="matMenu" ngSkipHydration>
+<mat-menu #menu="matMenu">
   <button mat-menu-item>Mercy</button>
   <button mat-menu-item>Lucio</button>
   <button mat-menu-item disabled>Sombra</button>
@@ -191,7 +191,7 @@
 
 <h2>Select</h2>
 <mat-form-field>
-  <mat-select value="ceramic" ngSkipHydration>
+  <mat-select value="ceramic">
     <mat-option value="glass">Glass</mat-option>
     <mat-option value="ceramic">Ceramic</mat-option>
     <mat-option value="steel">Steel</mat-option>
@@ -219,7 +219,7 @@
 <mat-slider disabled></mat-slider>
 
 <h2>Tabs</h2>
-<mat-tab-group ngSkipHydration>
+<mat-tab-group>
   <mat-tab label="Overview">
     The overview
   </mat-tab>
@@ -241,7 +241,7 @@
 
 <mat-paginator [length]="100"
                [pageSizeOptions]="[5, 10, 25, 100]"
-               aria-label="Select page" ngSkipHydration>
+               aria-label="Select page">
 </mat-paginator>
 
 <h2>Toolbar</h2>
@@ -253,7 +253,7 @@
 
 <h2>Sort</h2>
 
-<table matSort ngSkipHydration>
+<table matSort>
   <tr>
     <th mat-sort-header="name">Name</th>
     <th mat-sort-header="calories">Calories</th>
@@ -290,7 +290,7 @@
 
 <h2>CDK Table</h2>
 
-<cdk-table #table [dataSource]="tableDataSource" ngSkipHydration>
+<cdk-table #table [dataSource]="tableDataSource">
   <ng-container cdkColumnDef="userId">
     <cdk-header-cell *cdkHeaderCellDef>ID</cdk-header-cell>
     <cdk-cell *cdkCellDef="let row">{{row.userId}}</cdk-cell>
@@ -302,7 +302,7 @@
 
 <h2>Material Table</h2>
 
-<mat-table [dataSource]="tableDataSource" ngSkipHydration>
+<mat-table [dataSource]="tableDataSource">
   <ng-container matColumnDef="userId">
     <mat-header-cell *matHeaderCellDef>ID</mat-header-cell>
     <mat-cell *matCellDef="let row"> {{row.userId}} </mat-cell>
@@ -314,7 +314,7 @@
 
 <h2>Native table with sticky header and footer</h2>
 
-<table mat-table [dataSource]="tableDataSource" ngSkipHydration>
+<table mat-table [dataSource]="tableDataSource">
   <ng-container matColumnDef="userId">
     <th mat-header-cell *matHeaderCellDef>ID</th>
     <td mat-cell *matCellDef="let row">{{row.userId}}</td>
@@ -338,14 +338,14 @@
 
 <h2>Vertical Stepper</h2>
 
-<mat-stepper orientation="vertical" ngSkipHydration>
+<mat-stepper orientation="vertical">
   <mat-step label="Step 1">Content 1</mat-step>
   <mat-step label="Step 1">Content 2</mat-step>
 </mat-stepper>
 
 <h2>Vertical Stepper (with label template)</h2>
 
-<mat-stepper orientation="vertical" ngSkipHydration>
+<mat-stepper orientation="vertical">
   <mat-step>
     <ng-template matStepLabel>NgTemplate Label #1</ng-template>
     Content 1
@@ -358,7 +358,7 @@
 
  <h2>Horizontal Stepper</h2>
 
-<mat-stepper ngSkipHydration>
+<mat-stepper>
   <mat-step label="Step 1">Content 1</mat-step>
   <mat-step label="Step 2">Content 2</mat-step>
 </mat-stepper>

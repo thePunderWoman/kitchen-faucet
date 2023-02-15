@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.2.0-next.2+sha-a37b7ea
+ * @license Angular v15.2.0-next.2+sha-8dbcb73
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -615,6 +615,14 @@ export declare type MetaDefinition = {
 export declare const platformBrowser: (extraProviders?: StaticProvider[]) => PlatformRef;
 
 /**
+ * TODO: add docs
+ *
+ * @publicApi
+ * @developerPreview
+ */
+export declare function provideHydrationSupport(): EnvironmentProviders;
+
+/**
  * Returns a set of providers required to setup [Testability](api/core/Testability) for an
  * application bootstrapped using the `bootstrapApplication` function. The set of providers is
  * needed to support testing an application with Protractor (which relies on the Testability APIs
@@ -961,5 +969,7 @@ export declare class ɵSharedStylesHost {
 export declare function ɵshimContentAttribute(componentShortId: string): string;
 
 export declare function ɵshimHostAttribute(componentShortId: string): string;
+
+export declare function ɵunescapeHtml(text: string): string;
 
 export { }

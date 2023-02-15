@@ -1,5 +1,5 @@
-import {Component, NgModule, provideHydrationSupport} from '@angular/core';
-import {BrowserModule} from '@angular/platform-browser';
+import {Component, NgModule} from '@angular/core';
+import {BrowserModule, provideHydrationSupport} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 
 import {KitchenFaucetMdcModule} from './kitchen-faucet-mdc/kitchen-faucet-mdc';
