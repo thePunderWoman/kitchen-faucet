@@ -6,7 +6,7 @@ import {
   GLOBAL_DEFS_FOR_TERSER,
   GLOBAL_DEFS_FOR_TERSER_WITH_AOT,
   constructorParametersDownlevelTransform
-} from "./chunk-Q6W3UCXI.js";
+} from "./chunk-JHMH3CX2.js";
 import {
   DEFAULT_ERROR_CODE,
   EmitFlags,
@@ -29,16 +29,21 @@ import {
   performCompilation,
   readConfiguration,
   untagAllTsFiles
-} from "./chunk-NKNLPRTR.js";
-import {
-  OptimizeFor
-} from "./chunk-GTHJVVVJ.js";
-import "./chunk-O4JLZZWJ.js";
+} from "./chunk-LJOMWG4Y.js";
 import {
   ConsoleLogger,
   LogLevel
 } from "./chunk-SBDNBITT.js";
-import "./chunk-Z534TW2O.js";
+import {
+  OptimizeFor
+} from "./chunk-MTZ2EM4A.js";
+import "./chunk-EDWIBG7R.js";
+import "./chunk-LLHKY5PL.js";
+import "./chunk-K2A5WD7L.js";
+import {
+  ActivePerfRecorder,
+  PerfPhase
+} from "./chunk-54RHUHYB.js";
 import {
   LogicalFileSystem,
   LogicalProjectPath,
@@ -60,15 +65,11 @@ import {
   setFileSystem,
   toRelativeImport
 } from "./chunk-EC5K6QPP.js";
-import {
-  ActivePerfRecorder,
-  PerfPhase
-} from "./chunk-NJMZRTB6.js";
 import "./chunk-SRFZMXHZ.js";
 
 // bazel-out/darwin_arm64-fastbuild/bin/packages/compiler-cli/src/version.mjs
 import { Version } from "@angular/compiler";
-var VERSION = new Version("15.2.0-next.2+sha-8dbcb73");
+var VERSION = new Version("15.2.0+sha-e45a8b6-with-local-changes");
 
 // bazel-out/darwin_arm64-fastbuild/bin/packages/compiler-cli/src/ngtsc/tsc_plugin.mjs
 var NgTscPlugin = class {

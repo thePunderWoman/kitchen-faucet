@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.2.0-next.2+sha-8dbcb73
+ * @license Angular v15.2.0+sha-e45a8b6-with-local-changes
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -237,12 +237,13 @@ export declare function disableDebugTools(): void;
  */
 export declare abstract class DomSanitizer implements Sanitizer {
     /**
-     * Sanitizes a value for use in the given SecurityContext.
+     * Gets a safe value from either a known safe value or a value with unknown safety.
      *
-     * If value is trusted for the context, this method will unwrap the contained safe value and use
-     * it directly. Otherwise, value will be sanitized to be safe in the given context, for example
-     * by replacing URLs that have an unsafe protocol part (such as `javascript:`). The implementation
-     * is responsible to make sure that the value can definitely be safely used in the given context.
+     * If the given value is already a `SafeValue`, this method returns the unwrapped value.
+     * If the security context is HTML and the given value is a plain string, this method
+     * sanitizes the string, removing any potentially unsafe content.
+     * For any other security context, this method throws an error if provided
+     * with a plain string.
      */
     abstract sanitize(context: SecurityContext, value: SafeValue | string | null): string | null;
     /**
@@ -636,6 +637,15 @@ export declare function provideHydrationSupport(): EnvironmentProviders;
 export declare function provideProtractorTestingSupport(): Provider[];
 
 /**
+ * A [DI token](guide/glossary#di-token "DI token definition") that indicates whether styles
+ * of destroyed components should be removed from DOM.
+ *
+ * By default, the value is set to `false`. This will be changed in the next major version.
+ * @publicApi
+ */
+export declare const REMOVE_STYLES_ON_COMPONENT_DESTROY: InjectionToken<boolean>;
+
+/**
  * Marker interface for a value that's safe to use as HTML.
  *
  * @publicApi
@@ -746,6 +756,7 @@ export declare class Title {
 export declare class TransferState {
     private store;
     private onSerializeCallbacks;
+    constructor();
     /**
      * Get the value corresponding to a key. Return `defaultValue` if key is not found.
      */
@@ -821,14 +832,17 @@ export declare class ɵDomEventsPlugin extends EventManagerPlugin {
     static ɵprov: i0.ɵɵInjectableDeclaration<ɵDomEventsPlugin>;
 }
 
-export declare class ɵDomRendererFactory2 implements RendererFactory2 {
+export declare class ɵDomRendererFactory2 implements RendererFactory2, OnDestroy {
     private eventManager;
     private sharedStylesHost;
     private appId;
+    private removeStylesOnCompDestory;
     private rendererByCompId;
     private defaultRenderer;
-    constructor(eventManager: EventManager, sharedStylesHost: ɵDomSharedStylesHost, appId: string);
+    constructor(eventManager: EventManager, sharedStylesHost: ɵDomSharedStylesHost, appId: string, removeStylesOnCompDestory: boolean);
     createRenderer(element: any, type: RendererType2 | null): Renderer2;
+    private getOrCreateRenderer;
+    ngOnDestroy(): void;
     begin(): void;
     end(): void;
     static ɵfac: i0.ɵɵFactoryDeclaration<ɵDomRendererFactory2, never>;
@@ -849,25 +863,26 @@ export declare class ɵDomSanitizerImpl extends DomSanitizer {
 }
 
 export declare class ɵDomSharedStylesHost extends ɵSharedStylesHost implements OnDestroy {
-    private doc;
+    private readonly doc;
     private appId;
-    private _hostNodes;
+    private readonly styleRef;
+    private hostNodes;
     private _styleNodesInDOM;
     constructor(doc: Document, appId: string);
-    private _addStylesToHost;
-    private collectServerRenderedStyles;
-    private _createStyleElement;
+    onStyleAdded(style: string): void;
+    onStyleRemoved(style: string): void;
+    ngOnDestroy(): void;
     addHost(hostNode: Node): void;
     removeHost(hostNode: Node): void;
-    onStylesAdded(additions: Set<string>): void;
-    ngOnDestroy(): void;
+    private addStyleToHost;
+    private resetHostNodes;
+    private createStyleElement;
+    private collectServerRenderedStyles;
     static ɵfac: i0.ɵɵFactoryDeclaration<ɵDomSharedStylesHost, never>;
     static ɵprov: i0.ɵɵInjectableDeclaration<ɵDomSharedStylesHost>;
 }
 
 export declare function ɵescapeHtml(text: string): string;
-
-export declare function ɵflattenStyles(compId: string, styles: Array<string | string[]>): string[];
 
 export { ɵgetDOM }
 
@@ -958,10 +973,15 @@ export declare const ɵNAMESPACE_URIS: {
     [ns: string]: string;
 };
 
-export declare class ɵSharedStylesHost {
+export declare class ɵSharedStylesHost implements OnDestroy {
+    private readonly usageCount;
     addStyles(styles: string[]): void;
-    onStylesAdded(additions: Set<string>): void;
-    getAllStyles(): string[];
+    removeStyles(styles: string[]): void;
+    onStyleRemoved(style: string): void;
+    onStyleAdded(style: string): void;
+    getAllStyles(): IterableIterator<string>;
+    private changeUsageCount;
+    ngOnDestroy(): void;
     static ɵfac: i0.ɵɵFactoryDeclaration<ɵSharedStylesHost, never>;
     static ɵprov: i0.ɵɵInjectableDeclaration<ɵSharedStylesHost>;
 }
@@ -969,6 +989,8 @@ export declare class ɵSharedStylesHost {
 export declare function ɵshimContentAttribute(componentShortId: string): string;
 
 export declare function ɵshimHostAttribute(componentShortId: string): string;
+
+export declare function ɵshimStyles(compId: string, styles: string[]): string[];
 
 export declare function ɵunescapeHtml(text: string): string;
 

@@ -1,6 +1,6 @@
 {
   "name": "@angular/core",
-  "version": "15.2.0-next.2+sha-8dbcb73",
+  "version": "15.2.0+sha-e45a8b6-with-local-changes",
   "description": "Angular - the core framework",
   "author": "angular",
   "license": "MIT",

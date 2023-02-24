@@ -1,6 +1,6 @@
 {
   "name": "@angular/platform-server",
-  "version": "15.2.0-next.2+sha-8dbcb73",
+  "version": "15.2.0+sha-e45a8b6-with-local-changes",
   "description": "Angular - library for using Angular in Node.js",
   "author": "angular",
   "license": "MIT",
@@ -8,15 +8,15 @@
     "node": "^14.20.0 || ^16.13.0 || >=18.10.0"
   },
   "peerDependencies": {
-    "@angular/animations": "15.2.0-next.2+sha-8dbcb73",
-    "@angular/common": "15.2.0-next.2+sha-8dbcb73",
-    "@angular/compiler": "15.2.0-next.2+sha-8dbcb73",
-    "@angular/core": "15.2.0-next.2+sha-8dbcb73",
-    "@angular/platform-browser": "15.2.0-next.2+sha-8dbcb73",
-    "@angular/platform-browser-dynamic": "15.2.0-next.2+sha-8dbcb73"
+    "@angular/animations": "15.2.0+sha-e45a8b6-with-local-changes",
+    "@angular/common": "15.2.0+sha-e45a8b6-with-local-changes",
+    "@angular/compiler": "15.2.0+sha-e45a8b6-with-local-changes",
+    "@angular/core": "15.2.0+sha-e45a8b6-with-local-changes",
+    "@angular/platform-browser": "15.2.0+sha-e45a8b6-with-local-changes",
+    "@angular/platform-browser-dynamic": "15.2.0+sha-e45a8b6-with-local-changes"
   },
   "dependencies": {
-    "domino": "^2.1.2",
+    "domino": "https://github.com/angular/domino.git#4280d0380df839d97b81e7680877ad5b55500e77",
     "tslib": "^2.3.0",
     "xhr2": "^0.2.0"
   },

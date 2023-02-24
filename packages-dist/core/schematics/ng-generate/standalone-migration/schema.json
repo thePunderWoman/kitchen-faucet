@@ -7,6 +7,7 @@
     "mode": {
       "description": "Operation that should be performed by the migrator",
       "type": "string",
+      "enum": ["convert-to-standalone", "prune-ng-modules", "standalone-bootstrap"],
       "default": "convert-to-standalone",
       "x-prompt": {
         "message": "Choose the type of migration:",
@@ -19,19 +20,19 @@
           {
             "value": "prune-ng-modules",
             "label": "Remove unnecessary NgModule classes"
+          },
+          {
+            "value": "standalone-bootstrap",
+            "label": "Bootstrap the application using standalone APIs"
           }
         ]
       }
     },
     "path": {
       "type": "string",
-      "$default": {
-        "$source": "workingDirectory"
-      },
       "description": "Path relative to the project root which should be migrated",
       "x-prompt": "Which path in your project should be migrated?",
       "default": "./"
     }
-  },
-  "required": ["mode", "path"]
+  }
 }

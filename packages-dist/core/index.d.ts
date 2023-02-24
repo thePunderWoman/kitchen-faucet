@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.2.0-next.2+sha-8dbcb73
+ * @license Angular v15.2.0+sha-e45a8b6-with-local-changes
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1417,6 +1417,13 @@ declare type ComponentTemplate<T> = {
 };
 
 /**
+ * Create a computed `Signal` which derives a reactive value from an expression.
+ *
+ * @developerPreview
+ */
+export declare function computed<T>(computation: () => T, equal?: ValueEqualityFn<T>): Signal<T>;
+
+/**
  * Configures the `Injector` to return an instance of a token.
  *
  * @see ["Dependency Injection Guide"](guide/dependency-injection).
@@ -1463,6 +1470,78 @@ export declare interface ConstructorSansProvider {
      */
     deps?: any[];
 }
+
+/**
+ * Represents a reader that can depend on reactive values (`Producer`s) and receive
+ * notifications when those values change.
+ *
+ * `Consumer`s do not wrap the reads they consume themselves, but rather can be set
+ * as the active reader via `setActiveConsumer`.
+ *
+ * The set of dependencies of a `Consumer` is dynamic. Implementers expose a
+ * monotonically increasing `trackingVersion` counter, which increments whenever
+ * the `Consumer` is about to re-run any reactive reads it needs and establish a
+ * new set of dependencies as a result.
+ *
+ * `Producer`s store the last `trackingVersion` they've seen from `Consumer`s which
+ * have read them. This allows a `Producer` to identify whether its record of the
+ * dependency is current or stale, by comparing the `Consumer`'s `trackingVersion`
+ * to the version at which the dependency was established.
+ */
+declare interface Consumer {
+    /**
+     * Numeric identifier of this `Producer`.
+     *
+     * May also be used to satisfy the interface for `Producer`.
+     */
+    readonly id: ConsumerId;
+    /**
+     * A `WeakRef` to this `Consumer` instance.
+     *
+     * An implementer provides this as a cached value to avoid the need to instantiate
+     * multiple `WeakRef` instances for the same `Consumer`.
+     *
+     * May also be used to satisfy the interface for `Producer`.
+     */
+    readonly ref: WeakRef<Consumer>;
+    /**
+     * A map of `Edge`s to `Producer` dependencies, keyed by the `ProducerId`.
+     *
+     * Used to poll `Producer`s to determine if the `Consumer` has really updated
+     * or not.
+     */
+    readonly producers: Map<ProducerId, Edge>;
+    /**
+     * Monotonically increasing counter representing a version of this `Consumer`'s
+     * dependencies.
+     */
+    readonly trackingVersion: number;
+    /**
+     * Called when a `Producer` dependency of this `Consumer` indicates it may
+     * have a new value.
+     *
+     * Notification alone does not mean the `Producer` has definitely produced a
+     * semantically different value, only that it _may_ have changed. Before a
+     * `Consumer` re-runs any computations or side effects, it should use the
+     * `consumerPollValueStatus` method to poll the `Producer`s on which it depends
+     * and determine if any of them have actually updated.
+     */
+    notify(): void;
+}
+
+/**
+ * Identifier for a `Consumer`, which is a branded `number`.
+ *
+ * Note that `ProducerId` and `ConsumerId` are assigned from the same sequence, so the same `number`
+ * will never be used for both.
+ *
+ * Branding provides additional type safety by ensuring that `ProducerId` and `ConsumerId` are
+ * mutually unassignable without a cast. Since several `Map`s are keyed by these IDs, this prevents
+ * `ConsumerId`s from being inadvertently used to look up `Producer`s or vice versa.
+ */
+declare type ConsumerId = number & {
+    __consumer: true;
+};
 
 declare const CONTAINERS = "c";
 
@@ -2213,7 +2292,7 @@ export declare interface Directive {
      * ```typescript
      * @Component({
      *   selector: 'child-dir',
-     *   outputs: [ 'bankNameChange' ]
+     *   outputs: [ 'bankNameChange' ],
      *   template: `<input (input)="bankNameChange.emit($event.target.value)" />`
      * })
      * class ChildDir {
@@ -2545,6 +2624,61 @@ export declare interface DoCheck {
      */
     ngDoCheck(): void;
 }
+
+/**
+ * A bidirectional edge in the producer-consumer dependency graph.
+ */
+declare interface Edge {
+    /**
+     * Weakly held reference to the `Consumer` side of this edge.
+     */
+    readonly consumerRef: WeakRef<Consumer>;
+    /**
+     * Weakly held reference to the `Producer` side of this edge.
+     */
+    readonly producerRef: WeakRef<Producer>;
+    /**
+     * `trackingVersion` of the `Consumer` at which this dependency edge was last observed.
+     *
+     * If this doesn't match the `Consumer`'s current `trackingVersion`, then this dependency record
+     * is stale, and needs to be cleaned up.
+     */
+    atTrackingVersion: number;
+    /**
+     * `valueVersion` of the `Producer` at the time this dependency was last accessed.
+     *
+     * This is used by `consumerPollValueStatus` to determine whether a `Consumer`'s dependencies have
+     * semantically changed.
+     */
+    seenValueVersion: number;
+}
+
+/**
+ * A global reactive effect, which can be manually scheduled or destroyed.
+ *
+ * @developerPreview
+ */
+export declare interface Effect {
+    /**
+     * Schedule the effect for manual execution, if it's not already.
+     */
+    schedule(): void;
+    /**
+     * Shut down the effect, removing it from any upcoming scheduled executions.
+     */
+    destroy(): void;
+    /**
+     * Direct access to the effect's `Consumer` for advanced use cases.
+     */
+    readonly consumer: Consumer;
+}
+
+/**
+ * Create a global `Effect` for the given reactive function.
+ *
+ * @developerPreview
+ */
+export declare function effect(effectFn: () => void): Effect;
 
 /**
  * Marks that the next string is an element name.
@@ -4252,6 +4386,11 @@ declare interface InternalViewRef extends ViewRef {
 export declare function isDevMode(): boolean;
 
 /**
+ * Checks if the given `value` function is a reactive `Signal`.
+ */
+export declare function isSignal(value: Function): value is Signal<unknown>;
+
+/**
  * Checks whether a given Component, Directive or Pipe is marked as standalone.
  * This will return false if passed anything other than a Component, Directive, or Pipe class
  * See this guide for additional information: https://angular.io/guide/standalone-components
@@ -4549,6 +4688,8 @@ export declare class KeyValueDiffers {
     static extend<S>(factories: KeyValueDifferFactory[]): StaticProvider;
     find(kv: any): KeyValueDifferFactory;
 }
+
+declare const LAZY = "l";
 
 /**
  * The state associated with a container.
@@ -4978,27 +5119,34 @@ declare const enum LViewFlags {
     FirstLViewPass = 8,
     /** Whether this view has default change detection strategy (checks always) or onPush */
     CheckAlways = 16,
+    /**
+     * Whether this view was created after lazy-loading a component.
+     * This information is needed for hydration, to retain dehydrated
+     * view after initial rendering pass. Otherwise, such a view would
+     * be removed up by the post-hydration cleanup operation.
+     */
+    Lazy = 32,
     /** Whether or not this view is currently dirty (needing check) */
-    Dirty = 32,
+    Dirty = 64,
     /** Whether or not this view is currently attached to change detection tree. */
-    Attached = 64,
+    Attached = 128,
     /** Whether or not this view is destroyed. */
-    Destroyed = 128,
+    Destroyed = 256,
     /** Whether or not this view is the root view */
-    IsRoot = 256,
+    IsRoot = 512,
     /**
      * Whether this moved LView was needs to be refreshed at the insertion location because the
      * declaration was dirty.
      */
-    RefreshTransplantedView = 512,
+    RefreshTransplantedView = 1024,
     /** Indicates that the view **or any of its ancestors** have an embedded view injector. */
-    HasEmbeddedViewInjector = 1024,
+    HasEmbeddedViewInjector = 2048,
     /**
      * Index of the current init phase on last 21 bits
      */
-    IndexWithinInitPhaseIncrementer = 2048,
-    IndexWithinInitPhaseShift = 11,
-    IndexWithinInitPhaseReset = 2047
+    IndexWithinInitPhaseIncrementer = 4096,
+    IndexWithinInitPhaseShift = 12,
+    IndexWithinInitPhaseReset = 4095
 }
 
 /**
@@ -5088,6 +5236,7 @@ declare interface NghDom {
     [NODES]?: Record<number, string>;
     [CONTAINERS]?: Record<number, NghContainer>;
     [TEMPLATES]?: Record<number, string>;
+    [LAZY]?: number;
 }
 
 declare interface NghDomInstance {
@@ -5996,6 +6145,74 @@ declare const enum PreOrderHookFlags {
  * overrides).
  */
 declare type ProcessProvidersFunction = (providers: Provider[]) => Provider[];
+
+/**
+ * Represents a value that can be read reactively, and can notify readers (`Consumer`s)
+ * when it changes.
+ *
+ * Producers maintain a weak reference to any `Consumer`s which may depend on the
+ * producer's value.
+ *
+ * Implementers of `Producer` expose a monotonic `valueVersion` counter, and are responsible
+ * for incrementing this version when their value semantically changes. Some Producers may
+ * produce this value lazily and thus at times need to be polled for potential updates to
+ * their value (and by extension their `valueVersion`). This is accomplished via the
+ * `checkForChangedValue` method for Producers, which should perform whatever calculations
+ * are necessary to ensure `valueVersion` is up to date.
+ *
+ * `Producer`s support two operations:
+ *   * `producerNotifyConsumers`
+ *   * `producerAccessed`
+ */
+declare interface Producer {
+    /**
+     * Numeric identifier of this `Producer`.
+     *
+     * May also be used to satisfy the interface for `Consumer`.
+     */
+    readonly id: ProducerId;
+    /**
+     * A `WeakRef` to this `Producer` instance.
+     *
+     * An implementer provides this as a cached value to avoid the need to instantiate
+     * multiple `WeakRef` instances for the same `Producer`.
+     *
+     * May also be used to satisfy the interface for `Consumer`.
+     */
+    readonly ref: WeakRef<Producer>;
+    /**
+     * A map of dependency `Edge`s to `Consumer`s, keyed by the `ConsumerId`.
+     *
+     * Used when the produced value changes to notify interested `Consumer`s.
+     */
+    readonly consumers: Map<ConsumerId, Edge>;
+    /**
+     * Monotonically increasing counter which increases when the value of this `Producer`
+     * semantically changes.
+     */
+    readonly valueVersion: number;
+    /**
+     * Ensure that `valueVersion` is up to date for the `Producer`'s value.
+     *
+     * Some `Producer`s may produce values lazily, and thus require polling before their
+     * `valueVersion` can be compared with the version captured during a previous read.
+     */
+    checkForChangedValue(): void;
+}
+
+/**
+ * Identifier for a `Producer`, which is a branded `number`.
+ *
+ * Note that `ProducerId` and `ConsumerId` are assigned from the same sequence, so the same `number`
+ * will never be used for both.
+ *
+ * Branding provides additional type safety by ensuring that `ProducerId` and `ConsumerId` are
+ * mutually unassignable without a cast. Since several `Map`s are keyed by these IDs, this prevents
+ * `ProducerId`s from being inadvertently used to look up `Consumer`s or vice versa.
+ */
+declare type ProducerId = number & {
+    __producer: true;
+};
 
 /**
  * List of slots for a projection. A slot can be either based on a parsed CSS selector
@@ -7054,7 +7271,7 @@ export declare interface RendererType2 {
     /**
      * Defines CSS styles to be stored on a renderer instance.
      */
-    styles: (string | any[])[];
+    styles: string[];
     /**
      * Defines arbitrary developer-defined data to be stored on a renderer instance.
      * This is useful for renderers that delegate to other renderers.
@@ -7352,10 +7569,60 @@ export declare interface SelfDecorator {
 }
 
 /**
+ * A `Signal` with a value that can be mutated via a setter interface.
+ *
+ * @developerPreview
+ */
+export declare interface SettableSignal<T> extends Signal<T> {
+    /**
+     * Directly set the signal to a new value, and notify any dependents.
+     */
+    set(value: T): void;
+    /**
+     * Update the value of the signal based on its current value, and
+     * notify any dependents.
+     */
+    update(updateFn: (value: T) => T): void;
+    /**
+     * Update the current value by mutating it in-place, and
+     * notify any dependents.
+     */
+    mutate(mutatorFn: (value: T) => void): void;
+}
+
+/**
  * Set the {@link GetTestability} implementation used by the Angular testing framework.
  * @publicApi
  */
 export declare function setTestabilityGetter(getter: GetTestability): void;
+
+/**
+ * Symbol used to tell `Signal`s apart from other functions.
+ *
+ * This can be used to auto-unwrap signals in various cases, or to auto-wrap non-signal values.
+ */
+declare const SIGNAL: unique symbol;
+
+/**
+ * A reactive value which notifies consumers of any changes.
+ *
+ * Signals are functions which returns their current value. To access the current value of a signal,
+ * call it.
+ *
+ * Ordinary values can be turned into `Signal`s with the `signal` function.
+ *
+ * @developerPreview
+ */
+export declare type Signal<T> = (() => T) & {
+    [SIGNAL]: true;
+};
+
+/**
+ * Create a `Signal` that can be set or updated directly.
+ *
+ * @developerPreview
+ */
+export declare function signal<T>(initialValue: T, equal?: ValueEqualityFn<T>): SettableSignal<T>;
 
 
 /**
@@ -8071,6 +8338,11 @@ declare interface TNode {
      * If this TNode corresponds to an element, tViews will be null .
      */
     tViews: TView | TView[] | null;
+    /**
+     * The previous sibling node.
+     * This simplifies operations when we need a pointer to the previous node.
+     */
+    prev: TNode | null;
     /**
      * The next sibling node. Necessary so we can propagate through the root nodes of a view
      * to insert them or remove them from the DOM.
@@ -9117,6 +9389,22 @@ declare type TypeOrFactory<T> = T | (() => T);
 export declare interface TypeProvider extends Type<any> {
 }
 
+
+/**
+ * Execute an arbitrary function in a non-reactive (non-tracking) context. The executed function
+ * can, optionally, return a value.
+ *
+ * @developerPreview
+ */
+export declare function untracked<T>(nonReactiveReadsFn: () => T): T;
+
+/**
+ * A comparison function which can determine if two values are equal.
+ *
+ * @developerPreview
+ */
+export declare type ValueEqualityFn<T> = (a: T, b: T) => boolean;
+
 /**
  * Configures the `Injector` to return a value for a token.
  * @see ["Dependency Injection Guide"](guide/dependency-injection).
@@ -9437,6 +9725,8 @@ export declare abstract class ViewContainerRef {
      *                 replace the `ngModuleRef` parameter.
      *  * projectableNodes: list of DOM nodes that should be projected through
      *                      [`<ng-content>`](api/core/ng-content) of the new component instance.
+     *  * lazy: boolean flag that indicates whether this component instance was created after an
+     *          initial rendering after lazy-loading component's code.
      *
      * @returns The new `ComponentRef` which contains the component instance and the host view.
      */
@@ -9446,6 +9736,7 @@ export declare abstract class ViewContainerRef {
         ngModuleRef?: NgModuleRef<unknown>;
         environmentInjector?: EnvironmentInjector | NgModuleRef<unknown>;
         projectableNodes?: Node[][];
+        lazy?: boolean;
     }): ComponentRef<C>;
     /**
      * Instantiates a single component and inserts its host view into this container.
@@ -9458,6 +9749,8 @@ export declare abstract class ViewContainerRef {
      *     [`<ng-content>`](api/core/ng-content) of the new component instance.
      * @param ngModuleRef An instance of the NgModuleRef that represent an NgModule.
      * This information is used to retrieve corresponding NgModule injector.
+     * @param lazy A flag that indicates whether this component instance was created after an
+     *          initial rendering after lazy-loading component's code.
      *
      * @returns The new `ComponentRef` which contains the component instance and the host view.
      *
@@ -9465,7 +9758,7 @@ export declare abstract class ViewContainerRef {
      *     Use different signature of the `createComponent` method, which allows passing
      *     Component class directly.
      */
-    abstract createComponent<C>(componentFactory: ComponentFactory<C>, index?: number, injector?: Injector, projectableNodes?: any[][], environmentInjector?: EnvironmentInjector | NgModuleRef<any>): ComponentRef<C>;
+    abstract createComponent<C>(componentFactory: ComponentFactory<C>, index?: number, injector?: Injector, projectableNodes?: any[][], environmentInjector?: EnvironmentInjector | NgModuleRef<any>, lazy?: boolean): ComponentRef<C>;
     /**
      * Inserts a view into this container.
      * @param viewRef The view to insert.
@@ -9592,6 +9885,17 @@ declare interface ViewRefTracker {
 }
 
 declare const VIEWS = "v";
+
+
+declare interface WeakRef<T extends object> {
+    deref(): T | undefined;
+}
+
+declare const WeakRef: WeakRefCtor;
+
+declare interface WeakRefCtor {
+    new <T extends object>(value: T): WeakRef<T>;
+}
 
 /**
  * Sanitizes the given unsafe, untrusted HTML fragment, and returns HTML text that is safe to add to
@@ -14845,6 +15149,7 @@ export declare function ɵɵtemplate(index: number, templateFn: ComponentTemplat
  * @codeGenApi
  */
 export declare function ɵɵtemplateRefExtractor(tNode: TNode, lView: LView): TemplateRef<any> | null;
+
 
 /**
  * Create static text node

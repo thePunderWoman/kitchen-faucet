@@ -1,5 +1,5 @@
 /**
- * @license Angular v15.2.0-next.2+sha-8dbcb73
+ * @license Angular v15.2.0+sha-e45a8b6-with-local-changes
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -160,25 +160,6 @@ export declare class CommonModule {
  * that determine group sizing and separator, decimal-point character,
  * and other locale-specific configurations.
  *
- * {@a currency-code-deprecation}
- * <div class="alert is-helpful">
- *
- * **Deprecation notice:**
- *
- * The default currency code is currently always `USD` but this is deprecated from v9.
- *
- * **In v11 the default currency code will be taken from the current locale identified by
- * the `LOCALE_ID` token. See the [i18n guide](guide/i18n-common-locale-id) for
- * more information.**
- *
- * If you need the previous behavior then set it by creating a `DEFAULT_CURRENCY_CODE` provider in
- * your application `NgModule`:
- *
- * ```ts
- * {provide: DEFAULT_CURRENCY_CODE, useValue: 'USD'}
- * ```
- *
- * </div>
  *
  * @see `getCurrencySymbol()`
  * @see `formatCurrency()`
@@ -1243,6 +1224,12 @@ export declare interface ImageLoaderConfig {
      * Width of the requested image (to be used when generating srcset).
      */
     width?: number;
+    /**
+     * Additional user-provided parameters for use by the ImageLoader.
+     */
+    loaderParams?: {
+        [key: string]: any;
+    };
 }
 
 /**
@@ -2270,6 +2257,12 @@ export declare class NgOptimizedImage implements OnInit, OnChanges, OnDestroy {
     get priority(): boolean;
     private _priority;
     /**
+     * Data to pass through to custom loaders.
+     */
+    loaderParams?: {
+        [key: string]: any;
+    };
+    /**
      * Disables automatic srcset generation for this image.
      */
     set disableOptimizedSrcset(value: string | boolean | undefined);
@@ -2289,6 +2282,7 @@ export declare class NgOptimizedImage implements OnInit, OnChanges, OnDestroy {
     private setHostAttributes;
     /** @nodoc */
     ngOnChanges(changes: SimpleChanges): void;
+    private callImageLoader;
     private getLoadingBehavior;
     private getFetchPriority;
     private getRewrittenSrc;
@@ -2301,7 +2295,7 @@ export declare class NgOptimizedImage implements OnInit, OnChanges, OnDestroy {
     ngOnDestroy(): void;
     private setHostAttribute;
     static ɵfac: i0.ɵɵFactoryDeclaration<NgOptimizedImage, never>;
-    static ɵdir: i0.ɵɵDirectiveDeclaration<NgOptimizedImage, "img[ngSrc]", never, { "ngSrc": "ngSrc"; "ngSrcset": "ngSrcset"; "sizes": "sizes"; "width": "width"; "height": "height"; "loading": "loading"; "priority": "priority"; "disableOptimizedSrcset": "disableOptimizedSrcset"; "fill": "fill"; "src": "src"; "srcset": "srcset"; }, {}, never, never, true, never>;
+    static ɵdir: i0.ɵɵDirectiveDeclaration<NgOptimizedImage, "img[ngSrc]", never, { "ngSrc": "ngSrc"; "ngSrcset": "ngSrcset"; "sizes": "sizes"; "width": "width"; "height": "height"; "loading": "loading"; "priority": "priority"; "loaderParams": "loaderParams"; "disableOptimizedSrcset": "disableOptimizedSrcset"; "fill": "fill"; "src": "src"; "srcset": "srcset"; }, {}, never, never, true, never>;
 }
 
 /**
