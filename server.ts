@@ -1,7 +1,8 @@
 import 'zone.js/node';
 
 import {APP_BASE_HREF} from '@angular/common';
-import {ɵenableSsrPeformanceProfiler as enableSsrPeformanceProfiler, ɵSsrProfiler as SsrProfiler} from '@angular/core';
+// import {ɵenableSsrPeformanceProfiler as enableSsrPeformanceProfiler,
+// ɵSsrProfiler as SsrProfiler} from '@angular/core';
 import {ngExpressEngine} from '@nguniversal/express-engine';
 import * as express from 'express';
 import {existsSync} from 'fs';
@@ -33,8 +34,8 @@ export function app(): express.Express {
 
   // All regular routes use the Universal engine
   server.get('*', (req, res) => {
-    const profiler = new SsrProfiler();
-    enableSsrPeformanceProfiler(profiler);
+    // const profiler = new SsrProfiler();
+    // enableSsrPeformanceProfiler(profiler);
     res.render(
         indexHtml,
         {req, providers: [{provide: APP_BASE_HREF, useValue: req.baseUrl}]});

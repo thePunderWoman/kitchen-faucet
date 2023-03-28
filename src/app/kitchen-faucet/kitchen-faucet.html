@@ -80,9 +80,8 @@
 </mat-chip-list>
 
 
- <h2>Datepicker</h2>
+<h2>Datepicker</h2>
 
-<!-- material form fields seem to have issues with the label creation -->
 <mat-form-field>
   <input type="text" matInput [matDatepicker]="birthday" placeholder="Birthday">
   <mat-datepicker-toggle matSuffix [for]="birthday"></mat-datepicker-toggle>
@@ -124,7 +123,6 @@
 <mat-form-field>
   <textarea matInput placeholder="description"></textarea>
 </mat-form-field>
-<!-- problems specifically with mat-error, but ngSkipHydration has to be put on the parent element -->
 <mat-form-field>
   <input type="number" matInput placeholder="amount">
   <span matPrefix>$&nbsp;</span>
@@ -254,27 +252,28 @@
 <h2>Sort</h2>
 
 <table matSort>
-  <tr>
-    <th mat-sort-header="name">Name</th>
-    <th mat-sort-header="calories">Calories</th>
-    <th mat-sort-header="fat">Fat</th>
-    <th mat-sort-header="carbs">Carbs</th>
-    <th mat-sort-header="protein">Protein</th>
-  </tr>
+  <tbody>
+    <tr>
+      <th mat-sort-header="name">Name</th>
+      <th mat-sort-header="calories">Calories</th>
+      <th mat-sort-header="fat">Fat</th>
+      <th mat-sort-header="carbs">Carbs</th>
+      <th mat-sort-header="protein">Protein</th>
+    </tr>
 
-  <tr>
-    <td>Cupcake</td>
-    <td>305</td>
-    <td>4</td>
-    <td>67</td>
-    <td>4</td>
-  </tr>
+    <tr>
+      <td>Cupcake</td>
+      <td>305</td>
+      <td>4</td>
+      <td>67</td>
+      <td>4</td>
+    </tr>
+  </tbody>
 </table>
 
 <h2>Tooltip</h2>
 
 <button matTooltip="Action!">Go</button>
-
 <h2>Autosize textarea</h2>
 <textarea cdkTextareaAutosize cdkAutosizeMaxRows="10"></textarea>
 
@@ -326,7 +325,6 @@
   <tr mat-footer-row *matFooterRowDef="tableColumns; sticky: true"></tr>
 </table>
 
-
 <h2>Selection list</h2>
 <mat-selection-list>
   <h3 mat-subheader>Groceries</h3>
@@ -334,7 +332,6 @@
   <mat-list-option value="bananas">Bananas</mat-list-option>
   <mat-list-option value="oranges">Oranges</mat-list-option>
 </mat-selection-list>
-
 
 <h2>Vertical Stepper</h2>
 
@@ -354,9 +351,9 @@
     <ng-template matStepLabel>NgTemplate Label #2</ng-template>
     Content 2
   </mat-step>
-</mat-stepper> -->
+</mat-stepper>
 
- <h2>Horizontal Stepper</h2>
+<h2>Horizontal Stepper</h2>
 
 <mat-stepper>
   <mat-step label="Step 1">Content 1</mat-step>

@@ -56,9 +56,9 @@
 <mat-checkbox indeterminate></mat-checkbox>
 <mat-checkbox>with a label</mat-checkbox>
 
-<!-- <h2>MDC Tooltip</h2>
+<h2>MDC Tooltip</h2>
 
-<button matTooltip="Action!">Go</button> -->
+<button matTooltip="Action!">Go</button>
 
 <!-- Hydration Problems -->
 <h2>MDC chips</h2>
@@ -129,15 +129,6 @@
   <input value="400" matSliderEndThumb>
 </mat-slider>
 
-
-<!-- Hydration Problems -->
-<!-- Direct DOM Manipulation -->
-
-<!-- Expected different element node: [Expected=> mat-tab == mat-tab-header <=Actual] -->
-<!--
-  Note that we set the `selectedIndex` here to hit the code path
-  where we might need to do some measurements.
--->
 <h2>MDC Tabs</h2>
 <mat-tab-group [selectedIndex]="1">
   <mat-tab label="Overview">
@@ -178,8 +169,6 @@
   <tr mat-header-row *matHeaderRowDef="['first-column', 'second-column']"></tr>
   <tr mat-row *matRowDef="let row; columns: ['first-column', 'second-column'];"></tr>
 </table>
-
-
 
 
 <h2>MDC Progress bar</h2>
