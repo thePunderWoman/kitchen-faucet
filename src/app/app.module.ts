@@ -1,5 +1,5 @@
-import {Component, NgModule, ɵprovideHydrationSupport as provideHydrationSupport} from '@angular/core';
-import {BrowserModule} from '@angular/platform-browser';
+import {Component, NgModule} from '@angular/core';
+import {BrowserModule, provideClientHydration} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 
 import {KitchenFaucetMdcModule} from './kitchen-faucet-mdc/kitchen-faucet-mdc';
@@ -25,7 +25,7 @@ export class KitchenFaucetRoot {
     KitchenFaucetModule,
     BrowserAnimationsModule,
   ],
-  providers: [provideHydrationSupport()],
+  providers: [provideClientHydration()],
 })
 export class KitchenFaucetRootModule {
 }
