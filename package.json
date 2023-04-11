@@ -4,12 +4,12 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
+    "build": "ng build --configuration production",
+    "watch": "ng build --watch --configuration production",
     "test": "ng test",
     "dev:ssr": "ng run kitchen-faucet:serve-ssr",
     "serve:ssr": "node dist/kitchen-faucet/server/main.js",
-    "build:ssr": "ng build && ng run kitchen-faucet:server",
+    "build:ssr": "ng build --configuration production && ng run kitchen-faucet:server",
     "prerender": "ng run kitchen-faucet:prerender"
   },
   "private": true,
@@ -25,6 +25,7 @@
     "@angular/router": "16.0.0-next.7",
     "@angular/material": "16.0.0-next.5",
     "@angular/cdk": "16.0.0-next.5",
+    "@angular/service-worker": "16.0.0-next.7",
     "@nguniversal/express-engine": "^16.0.0-next.0",
     "express": "^4.15.2",
     "rxjs": "~7.8.0",

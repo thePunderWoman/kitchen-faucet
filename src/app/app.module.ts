@@ -1,6 +1,7 @@
-import {Component, NgModule} from '@angular/core';
+import {Component, isDevMode, NgModule} from '@angular/core';
 import {BrowserModule, provideClientHydration} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
+import {ServiceWorkerModule} from '@angular/service-worker';
 
 import {KitchenFaucetMdcModule} from './kitchen-faucet-mdc/kitchen-faucet-mdc';
 import {KitchenFaucetModule} from './kitchen-faucet/kitchen-faucet';
@@ -24,6 +25,13 @@ export class KitchenFaucetRoot {
     KitchenFaucetMdcModule,
     KitchenFaucetModule,
     BrowserAnimationsModule,
+    ServiceWorkerModule.register('ngsw-worker.js', {
+      // enabled: !isDevMode(),
+      enabled: true,
+      // Register the ServiceWorker as soon as the application is stable
+      // or after 30 seconds (whichever comes first).
+      registrationStrategy: 'registerWhenStable:30000'
+    }),
   ],
   providers: [provideClientHydration()],
 })

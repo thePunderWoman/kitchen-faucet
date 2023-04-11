@@ -28,12 +28,15 @@
             "assets": [
               "src/favicon.ico",
               "src/robots.txt",
-              "src/assets"
+              "src/assets",
+              "src/manifest.webmanifest"
             ],
             "styles": [
               "src/styles.scss"
             ],
-            "scripts": []
+            "scripts": [],
+            "serviceWorker": true,
+            "ngswConfigPath": "ngsw-config.json"
           },
           "configurations": {
             "production": {
@@ -50,14 +53,6 @@
                 }
               ],
               "outputHashing": "all"
-            },
-            "development": {
-              "buildOptimizer": false,
-              "optimization": false,
-              "vendorChunk": true,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true
             }
           },
           "defaultConfiguration": "production"
@@ -67,12 +62,9 @@
           "configurations": {
             "production": {
               "browserTarget": "kitchen-faucet:build:production"
-            },
-            "development": {
-              "browserTarget": "kitchen-faucet:build:development"
             }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "production"
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
@@ -91,7 +83,8 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              "src/manifest.webmanifest"
             ],
             "styles": [
               "src/styles.scss"
@@ -110,12 +103,6 @@
           "configurations": {
             "production": {
               "outputHashing": "media"
-            },
-            "development": {
-              "optimization": false,
-              "sourceMap": true,
-              "extractLicenses": false,
-              "vendorChunk": true
             }
           },
           "defaultConfiguration": "production"
@@ -123,16 +110,12 @@
         "serve-ssr": {
           "builder": "@nguniversal/builders:ssr-dev-server",
           "configurations": {
-            "development": {
-              "browserTarget": "kitchen-faucet:build:development",
-              "serverTarget": "kitchen-faucet:server:development"
-            },
             "production": {
               "browserTarget": "kitchen-faucet:build:production",
               "serverTarget": "kitchen-faucet:server:production"
             }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "production"
         },
         "prerender": {
           "builder": "@nguniversal/builders:prerender",
@@ -145,10 +128,6 @@
             "production": {
               "browserTarget": "kitchen-faucet:build:production",
               "serverTarget": "kitchen-faucet:server:production"
-            },
-            "development": {
-              "browserTarget": "kitchen-faucet:build:development",
-              "serverTarget": "kitchen-faucet:server:development"
             }
           },
           "defaultConfiguration": "production"
